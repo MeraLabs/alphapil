@@ -99,35 +99,36 @@ class TextMixin:
         # Fall back to default font
         return ImageFont.load_default()
     
-    def _draw_text(self, x: str, y: str, text: str, color: str = "black", 
-                   size: str = "12", font: str = None, anchor: str = None,
-                   stroke_width: str = "0", stroke_fill: str = None,
+    def _draw_text(self, x: str, y: str, text: str, color: str = None, 
+                   size: str = None, font: str = None, anchor: str = None,
+                   stroke_width: str = None, stroke_fill: str = None,
                    shadow_color: str = None, shadow_offset: str = "0,0",
                    glow_color: str = None, glow_radius: str = "0",
                    max_width: str = None, truncate_width: str = None) -> str:
         """
         Draw text on the canvas with optional stroke, shadow, glow, wrapping, and truncation.
-        
-        Args:
-            x: X coordinate
-            y: Y coordinate
-            text: Text to draw
-            color: Text color
-            size: Font size
-            font: Font file path or alias
-            anchor: Text anchor (e.g., "la", "mm")
-            stroke_width: Width of text outline
-            stroke_fill: Color of text outline
-            shadow_color: Color of drop shadow
-            shadow_offset: Offset of shadow "x,y"
-            glow_color: Color of glow effect
-            glow_radius: Radius of glow blur
-            max_width: Width to wrap text at (optional)
-            truncate_width: Width to truncate text at (optional)
+        Uses global state defaults (setFont, setColor, setStroke) if parameters are missing.
         """
         self._ensure_canvas()
         
         try:
+            # Apply defaults from state
+            color = color or self._get_state('color', 'black')
+            size = size or str(self._get_state('font_size', 12))
+            font = font or self._get_state('font', None)
+            
+            # Stroke defaults
+            if stroke_width is None:
+                # Only apply global stroke if specifically set, otherwise default to 0 for text
+                sw = int(self._get_state('stroke_width', 0))
+            else:
+                sw = int(self._parse_num(stroke_width))
+                
+            if stroke_fill:
+                stroke_color = self._get_color(stroke_fill)
+            else:
+                stroke_color = self._get_color(self._get_state('stroke_color', 'black')) if sw > 0 else None
+
             # 0. Apply Truncation and Wrapping first
             if truncate_width:
                 text = self._truncate_text(text, truncate_width, size, font)
@@ -137,11 +138,9 @@ class TextMixin:
             x_pos = self._parse_position(x, 'x')
             y_pos = self._parse_position(y, 'y')
             font_size = self._parse_num(size)
-            sw = int(self._parse_num(stroke_width))
             gr = int(self._parse_num(glow_radius))
             
             text_color = self._get_color(color)
-            stroke_color = self._get_color(stroke_fill) if stroke_fill else None
             font_obj = self._get_font(font_size, font)
             
             # 1. Apply Glow Effect (by drawing blurred text behind)
@@ -482,9 +481,9 @@ class TextMixin:
     def _draw_text_mid(self, x1: str = None, y1: str = None, 
                         x2: str = None, y2: str = None, 
                         text: str = "", 
-                        color: str = "black", 
-                        size: str = "12", font: str = None, 
-                        stroke_width: str = "0", stroke_fill: str = None,
+                        color: str = None, 
+                        size: str = None, font: str = None, 
+                        stroke_width: str = None, stroke_fill: str = None,
                         shadow_color: str = None, shadow_offset: str = "0,0",
                         glow_color: str = None, glow_radius: str = "0",
                         x: str = None, y: str = None,
@@ -532,9 +531,9 @@ class TextMixin:
             raise ValueError(f"Failed to draw multifunctional text: {e}")
 
     def _draw_text_in(self, x: str = None, y: str = None, w: str = None, h: str = None, 
-                      text: str = "", color: str = "black", 
-                      size: str = "12", font: str = None, 
-                      stroke_width: str = "0", stroke_fill: str = None,
+                      text: str = "", color: str = None, 
+                      size: str = None, font: str = None, 
+                      stroke_width: str = None, stroke_fill: str = None,
                       shadow_color: str = None, shadow_offset: str = "0,0",
                       glow_color: str = None, glow_radius: str = "0",
                       x1: str = None, x2: str = None, y1: str = None, y2: str = None,
