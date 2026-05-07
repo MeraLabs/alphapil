@@ -74,19 +74,20 @@ class ShapesMixin:
             color = color or self._get_state('color', 'black')
             lw = int(self._parse_num(outline_width)) if outline_width else int(self._get_state('stroke_width', 0))
 
-            # Apply anchor offset (Default 'mm' for circles)
-            # If anchor is 'lt', we must shift by radius to treat cx/cy as top-left
-            if anchor == 'lt':
-                center_x = self._parse_position(cx, 'x') + r
-                center_y = self._parse_position(cy, 'y') + r
-            else:
-                center_x = self._parse_position(cx, 'x')
-                center_y = self._parse_position(cy, 'y')
+            # Universal Anchor Logic: Anchor offset is calculated relative to center for 'mm'
+            # or shifted for others.
+            ax, ay = self._get_anchor_offset(anchor, w, h)
+            
+            # cx/cy are the raw center provided. If anchor=mm, ax/ay = -r, -r
+            # so left = cx - r, top = cy - r. 
+            # Note: _get_anchor_offset for 'mm' returns -w/2, -h/2
+            x_pos = self._parse_position(cx, 'x') + ax
+            y_pos = self._parse_position(cy, 'y') + ay
 
-            left = center_x - r
-            top = center_y - r
-            right = center_x + r
-            bottom = center_y + r
+            left = x_pos
+            top = y_pos
+            right = x_pos + w
+            bottom = y_pos + h
             bbox = [(left, top), (right, bottom)]
 
             fill_color = self._get_color(fill) if fill else self._get_color(color)
@@ -103,7 +104,7 @@ class ShapesMixin:
             else:
                 self.draw.ellipse(bbox, fill=fill_color)
 
-            return f"Circle drawn at ({center_x}, {center_y}) with radius {r}"
+            return f"Circle drawn at ({x_pos+r}, {y_pos+r}) with radius {r}"
         except ValueError as e:
             raise ValueError(f"Invalid circle parameters: {e}")
 

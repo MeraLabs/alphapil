@@ -46,8 +46,7 @@ class ImagesMixin:
         try:
             is_circle = str(circle).lower() in ['true', '1', 'yes', 'on']
             
-            # 1. Determine default anchor
-            # If circle=true, default to 'mm' (center), otherwise 'lt' (top-left)
+            # Automatic Circle Centering: If circle=true, default anchor to mm
             if anchor is None:
                 final_anchor = "mm" if is_circle else "lt"
             else:

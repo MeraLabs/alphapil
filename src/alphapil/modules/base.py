@@ -44,47 +44,25 @@ class AlphaMixin:
 
     def _get_group_offset(self) -> Tuple[float, float]:
         """Calculate total offset from all active groups."""
-        tx, ty = 0.0, 0.0
-        if hasattr(self, '_group_stack'):
-            for ox, oy in self._group_stack:
-                tx += ox
-                ty += oy
-        return tx, ty
+        if hasattr(self, '_group_stack') and self._group_stack:
+            # Absolute origin: only the top of the stack matters
+            return self._group_stack[-1]
+        return 0.0, 0.0
 
     def _start_group(self, x: str = "0", y: str = "0") -> str:
         """
-        Start a new coordinate group.
-        Numbers are relative to the current group stack.
-        Keywords like 'center' or 'middle' are absolute to the canvas.
+        Start a new coordinate group with an absolute origin relative to the canvas.
+        Ignores previous group offsets.
         """
         if not hasattr(self, '_group_stack'):
             self._group_stack = []
         
-        # We parse the new offset relative to the CURRENT stack
-        # but keywords remain absolute.
-        ox = self._parse_position(x, 'x', ignore_stack=False)
-        oy = self._parse_position(y, 'y', ignore_stack=False)
+        # Parse x, y as absolute (ignore current stack)
+        ox = self._parse_position(x, 'x', ignore_stack=True)
+        oy = self._parse_position(y, 'y', ignore_stack=True)
         
-        # Since _parse_position already added the current stack sum (if not ignore_stack),
-        # we calculate the DELTA to add to the stack, OR we just store absolute and change _get_group_offset.
-        # Actually, it's easier to store the TOTAL offset as a new entry if we want nesting,
-        # but the current _get_group_offset sums them.
-        
-        # Let's change the strategy: Store the total absolute offset in the stack.
-        # This makes it easier to handle absolute keywords vs relative shifts.
-        current_tx, current_ty = self._get_group_offset()
-        
-        # New absolute offset
-        new_ox = ox
-        new_oy = oy
-        
-        # We store the delta from the previous group to keep summation logic?
-        # No, let's just push the delta.
-        delta_x = new_ox - current_tx
-        delta_y = new_oy - current_ty
-        
-        self._group_stack.append((delta_x, delta_y))
-        return f"Group started at absolute ({new_ox}, {new_oy})"
+        self._group_stack.append((ox, oy))
+        return f"Group started at absolute origin ({ox}, {oy})"
 
     def _end_group(self) -> str:
         """End the current coordinate group."""
