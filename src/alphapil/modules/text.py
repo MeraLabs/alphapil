@@ -5,8 +5,10 @@ This module provides functions for drawing text on the canvas and
 performing text transformations like case conversion.
 """
 
-from typing import Union
-from PIL import ImageDraw, ImageFont
+import io
+import aiohttp
+from typing import Union, Dict, Optional
+from PIL import ImageDraw, ImageFont, ImageFilter, Image
 
 
 class TextMixin:
@@ -19,14 +21,15 @@ class TextMixin:
     
     def _init_text(self):
         """Initialize text state."""
-        self._font_aliases = {}
+        self._font_aliases: Dict[str, str] = {}
+        self._font_cache: Dict[str, bytes] = {}
         
-    def _load_font(self, path: str, alias: str) -> str:
+    async def _load_font(self, path: str, alias: str) -> str:
         """
-        Register a font file path to an alias.
+        Register a font file path or URL to an alias.
         
         Args:
-            path: Path to .ttf or .otf file
+            path: Path to .ttf/.otf file or a direct URL
             alias: Shorthand name to use later
             
         Returns:
@@ -34,8 +37,22 @@ class TextMixin:
         """
         if not hasattr(self, '_font_aliases'):
             self._init_text()
-        self._font_aliases[alias] = path
-        return f"Font alias '{alias}' registered for {path}"
+            
+        if path.startswith(('http://', 'https://')):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(path) as response:
+                        if response.status != 200:
+                            raise ValueError(f"Failed to download font: HTTP {response.status}")
+                        font_data = await response.read()
+                        self._font_cache[alias] = font_data
+                        self._font_aliases[alias] = path # Store path as reference
+                return f"Remote font '{path}' loaded and cached as alias '{alias}'"
+            except Exception as e:
+                raise RuntimeError(f"Error loading remote font: {e}")
+        else:
+            self._font_aliases[alias] = path
+            return f"Local font alias '{alias}' registered for {path}"
 
     def _get_font(self, size: Union[str, int], font_path: str = None) -> ImageFont.ImageFont:
         """
@@ -43,25 +60,35 @@ class TextMixin:
         
         Args:
             size: Font size as string or integer
-            font_path: Path to font file (optional)
+            font_path: Path to font file or alias
             
         Returns:
             PIL ImageFont object
         """
         font_size = int(size) if isinstance(size, str) else size
         
-        # Check if font_path is an alias
+        # Check if font_path is a cached alias (Remote Font)
+        if font_path and hasattr(self, '_font_cache') and font_path in self._font_cache:
+            return ImageFont.truetype(io.BytesIO(self._font_cache[font_path]), font_size)
+
+        # Check if font_path is a registered alias (Local Path)
         if font_path and hasattr(self, '_font_aliases') and font_path in self._font_aliases:
             font_path = self._font_aliases[font_path]
 
         if font_path:
             try:
-                return ImageFont.truetype(font_path, font_size)
+                # Check if path itself is a URL but wasn't pre-loaded (not recommended but handled)
+                if font_path.startswith(('http://', 'https://')):
+                    # We can't easily sync download here without blocking, 
+                    # so we fallback to default if not pre-loaded via $loadFont
+                    pass
+                else:
+                    return ImageFont.truetype(font_path, font_size)
             except:
                 pass  # Fall back to default font
         
         # Try common system fonts
-        common_fonts = ["arial.ttf", "arialbd.ttf", "times.ttf", "cour.ttf"]
+        common_fonts = ["arial.ttf", "arialbd.ttf", "times.ttf", "cour.ttf", "DejaVuSans.ttf"]
         
         for font_name in common_fonts:
             try:

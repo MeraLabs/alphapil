@@ -8,7 +8,7 @@ These functions manage the canvas, files, and core engine settings.
 | **save** | Saves the current canvas to a file. | `$save[filename]` |
 | **setVar** | Sets a template-local variable. | `$setVar[name;value]` |
 | **setFont** | Sets the default font and size. | `$setFont[font_path;size]` |
-| **loadFont** | Loads a font with an alias. | `$loadFont[font_path;alias]` |
+| **loadFont** | Loads a local or remote font (URL) with an alias. | `$loadFont[path_or_url;alias]` |
 | **setColor** | Sets the default fill color. | `$setColor[color]` |
 | **setStroke** | Sets the default stroke width and color. | `$setStroke[width;color]` |
 
