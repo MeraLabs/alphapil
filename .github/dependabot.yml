@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Maintain Python dependencies for the main package
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Maintain Python dependencies for the Discord Bot
+  - package-ecosystem: "pip"
+    directory: "/AlphaPIL_Bot"
+    schedule:
+      interval: "weekly"
