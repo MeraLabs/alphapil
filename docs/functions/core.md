@@ -6,6 +6,7 @@ These functions manage the canvas, files, and core engine settings.
 | :--- | :--- | :--- |
 | **createCanvas** | Creates a new blank image. | `$createCanvas[width;height;color]` |
 | **save** | Saves the current canvas to a file. | `$save[filename]` |
+| **getBytes** | Returns the current canvas as bytes. | `$getBytes[format]` |
 | **setVar** | Sets a template-local variable. | `$setVar[name;value]` |
 | **setFont** | Sets the default font and size. | `$setFont[font_path;size]` |
 | **loadFont** | Loads a local or remote font (URL) with an alias. | `$loadFont[path_or_url;alias]` |

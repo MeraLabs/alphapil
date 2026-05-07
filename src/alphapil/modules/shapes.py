@@ -24,12 +24,13 @@ class ShapesMixin:
     # -------------------------
 
     def _draw_rect(self, x: str, y: str, width: str, height: str, 
-                   color: str = None, outline: str = None, fill: str = None, 
+                   radius: str = "0", color: str = None, outline: str = None, fill: str = None, 
                    outline_width: str = None, anchor: str = "lt") -> str:
         self._ensure_canvas()
         try:
             w = self._parse_num(width)
             h = self._parse_num(height)
+            r = self._parse_num(radius)
             
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
@@ -46,19 +47,25 @@ class ShapesMixin:
 
             fill_color = self._get_color(fill) if fill else self._get_color(color)
             
-            # Outline logic: use provided or state-based if lw > 0
+            # Outline logic
             outline_color = None
             if outline:
                 outline_color = self._get_color(outline)
             elif lw > 0:
                 outline_color = self._get_color(self._get_state('stroke_color', 'black'))
 
-            if outline_color:
-                self.draw.rectangle(bbox, fill=fill_color, outline=outline_color, width=lw)
+            if r > 0 and hasattr(self.draw, 'rounded_rectangle'):
+                if outline_color:
+                    self.draw.rounded_rectangle(bbox, radius=r, fill=fill_color, outline=outline_color, width=lw)
+                else:
+                    self.draw.rounded_rectangle(bbox, radius=r, fill=fill_color)
             else:
-                self.draw.rectangle(bbox, fill=fill_color)
+                if outline_color:
+                    self.draw.rectangle(bbox, fill=fill_color, outline=outline_color, width=lw)
+                else:
+                    self.draw.rectangle(bbox, fill=fill_color)
 
-            return f"Rectangle drawn at ({x1}, {y1}) size {w}x{h}"
+            return f"Rectangle drawn at ({x1}, {y1}) size {w}x{h}" + (f" with radius {r}" if r > 0 else "")
         except ValueError as e:
             raise ValueError(f"Invalid rectangle parameters: {e}")
 
@@ -107,53 +114,6 @@ class ShapesMixin:
             return f"Circle drawn at ({x_pos+r}, {y_pos+r}) with radius {r}"
         except ValueError as e:
             raise ValueError(f"Invalid circle parameters: {e}")
-
-    def _draw_rounded_rect(self, x: str, y: str, width: str, height: str, 
-                           radius: str = "10", color: str = None, 
-                           outline: str = None, fill: str = None,
-                           outline_width: str = None, anchor: str = "lt") -> str:
-        self._ensure_canvas()
-        try:
-            w = self._parse_num(width)
-            h = self._parse_num(height)
-            
-            # Apply defaults from state
-            color = color or self._get_state('color', 'black')
-            lw = int(self._parse_num(outline_width)) if outline_width else int(self._get_state('stroke_width', 0))
-
-            # Apply anchor offset
-            ax, ay = self._get_anchor_offset(anchor, w, h)
-            x1 = self._parse_position(x, 'x') + ax
-            y1 = self._parse_position(y, 'y') + ay
-            
-            r = self._parse_num(radius)
-            x2 = x1 + w
-            y2 = y1 + h
-
-            fill_color = self._get_color(fill) if fill else self._get_color(color)
-            
-            # Outline logic
-            outline_color = None
-            if outline:
-                outline_color = self._get_color(outline)
-            elif lw > 0:
-                outline_color = self._get_color(self._get_state('stroke_color', 'black'))
-
-            bbox = [(x1, y1), (x2, y2)]
-            if hasattr(self.draw, 'rounded_rectangle'):
-                if outline_color:
-                    self.draw.rounded_rectangle(bbox, radius=r, fill=fill_color, outline=outline_color, width=lw)
-                else:
-                    self.draw.rounded_rectangle(bbox, radius=r, fill=fill_color)
-            else:
-                if outline_color:
-                    self.draw.rectangle(bbox, fill=fill_color, outline=outline_color, width=lw)
-                else:
-                    self.draw.rectangle(bbox, fill=fill_color)
-
-            return f"Rounded rectangle drawn at ({x1}, {y1}) size {w}x{h}"
-        except ValueError as e:
-            raise ValueError(f"Invalid rounded rectangle parameters: {e}")
 
     def _draw_line(self, x1: str, y1: str, x2: str, y2: str, 
                    color: str = None, width: str = None) -> str:

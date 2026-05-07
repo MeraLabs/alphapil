@@ -104,10 +104,25 @@ class TextMixin:
                    stroke_width: str = None, stroke_fill: str = None,
                    shadow_color: str = None, shadow_offset: str = "0,0",
                    glow_color: str = None, glow_radius: str = "0",
-                   max_width: str = None, truncate_width: str = None) -> str:
+                   max_width: str = None, truncate_width: str = None,
+                   gradient_colors: str = None) -> str:
         """
-        Draw text on the canvas with optional stroke, shadow, glow, wrapping, and truncation.
+        Draw text on the canvas with optional stroke, shadow, glow, wrapping, truncation, and gradient.
         Uses global state defaults (setFont, setColor, setStroke) if parameters are missing.
+        
+        Args:
+            x, y: Position
+            text: Content
+            color: Text color
+            size: Font size
+            font: Font alias or path
+            anchor: PIL anchor (e.g., 'mm', 'la')
+            stroke_width, stroke_fill: Stroke properties
+            shadow_color, shadow_offset: Shadow properties
+            glow_color, glow_radius: Glow properties
+            max_width: Wrap text if it exceeds this width
+            truncate_width: Truncate text if it exceeds this width
+            gradient_colors: Comma-separated colors for vertical gradient (e.g., "red,blue")
         """
         self._ensure_canvas()
         
@@ -119,7 +134,6 @@ class TextMixin:
             
             # Stroke defaults
             if stroke_width is None:
-                # Only apply global stroke if specifically set, otherwise default to 0 for text
                 sw = int(self._get_state('stroke_width', 0))
             else:
                 sw = int(self._parse_num(stroke_width))
@@ -143,15 +157,13 @@ class TextMixin:
             text_color = self._get_color(color)
             font_obj = self._get_font(font_size, font)
             
-            # 1. Apply Glow Effect (by drawing blurred text behind)
+            # 1. Apply Glow Effect
             if glow_color and gr > 0:
                 gc = self._get_color(glow_color)
-                # Create a larger temp surface for blur
                 bbox = self.draw.textbbox((0, 0), text, font=font_obj, stroke_width=sw)
-                tw, th = bbox[2]-bbox[0] + gr*4, bbox[3]-bbox[1] + gr*4
+                tw, th = int(bbox[2]-bbox[0] + gr*4), int(bbox[3]-bbox[1] + gr*4)
                 glow_img = Image.new("RGBA", (tw, th), (0,0,0,0))
                 ImageDraw.Draw(glow_img).text((gr*2, gr*2), text, font=font_obj, fill=gc, stroke_width=sw+gr, stroke_fill=gc)
-                from PIL import ImageFilter
                 glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
                 self.canvas.paste(glow_img, (int(x_pos - gr*2), int(y_pos - gr*2)), glow_img)
 
@@ -161,7 +173,29 @@ class TextMixin:
                 sx, sy = self._parse_coords(shadow_offset)
                 self.draw.text((x_pos + sx, y_pos + sy), text, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=anchor)
 
-            # 3. Draw Main Text
+            # 3. Handle Gradient
+            if gradient_colors:
+                colors = [c.strip() for c in gradient_colors.split(',')]
+                if len(colors) >= 2:
+                    bbox = self.draw.textbbox((0, 0), text, font=font_obj)
+                    tw, th = int(bbox[2]-bbox[0]), int(bbox[3]-bbox[1])
+                    if tw > 0 and th > 0:
+                        gradient = Image.new("RGBA", (tw, th))
+                        c1 = self._get_color(colors[0])
+                        c2 = self._get_color(colors[1])
+                        for i in range(th):
+                            ratio = i / th
+                            r = int(c1[0] * (1 - ratio) + c2[0] * ratio)
+                            g = int(c1[1] * (1 - ratio) + c2[1] * ratio)
+                            b = int(c1[2] * (1 - ratio) + c2[2] * ratio)
+                            ImageDraw.Draw(gradient).line([(0, i), (tw, i)], fill=(r, g, b, 255))
+                        
+                        mask = Image.new("L", (tw, th), 0)
+                        ImageDraw.Draw(mask).text((0, 0), text, font=font_obj, fill=255)
+                        self.canvas.paste(gradient, (int(x_pos), int(y_pos)), mask)
+                        return f"Gradient text '{text}' drawn at ({x_pos}, {y_pos})"
+
+            # 4. Draw Main Text
             text_kwargs = {
                 'xy': (x_pos, y_pos),
                 'text': text,
@@ -170,9 +204,7 @@ class TextMixin:
                 'stroke_width': sw,
                 'stroke_fill': stroke_color
             }
-            
-            if anchor:
-                text_kwargs['anchor'] = anchor
+            if anchor: text_kwargs['anchor'] = anchor
             
             self.draw.text(**text_kwargs)
             return f"Text '{text}' drawn at ({x_pos}, {y_pos})"

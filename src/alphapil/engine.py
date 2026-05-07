@@ -64,24 +64,37 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
                 for key, value in data.items():
                     self.set_variable(key, str(value))
             
-            # Parse template line by line
-            lines = template_text.strip().split('\n')
-            for line_num, line in enumerate(lines, 1):
+            # Clean up template: remove comments and handle line joins if any
+            # Note: The interpreter's parse method will handle multiple commands 
+            # sequentially if we just pass the whole string, as long as it finds 
+            # them one by one.
+            
+            # Pre-process: remove comments
+            lines = template_text.split('\n')
+            clean_lines = []
+            for line in lines:
                 line = line.strip()
-                
-                # Skip comments and empty lines
-                if not line or line.startswith('#'):
-                    continue
-                
-                print(f"[AlphaPIL] Line {line_num}: {line}")
-                # Parse and execute the line (awaiting async parse)
-                result = await self.parse(line)
+                if line and not line.startswith('#'):
+                    clean_lines.append(line)
+            
+            clean_template = ' '.join(clean_lines)
+            
+            # Parse and execute the entire template
+            await self.parse(clean_template)
             
             # Return canvas as bytes
             return self.get_canvas_bytes()
             
         except Exception as e:
             raise RuntimeError(f"Template rendering failed: {e}")
+
+    def get_bytes(self, format: str = "PNG") -> bytes:
+        """Alias for get_canvas_bytes"""
+        return self.get_canvas_bytes(format)
+
+    async def render(self, template_text: str, data: dict = None) -> bytes:
+        """Alias for render_template"""
+        return await self.render_template(template_text, data)
     
     async def render_template_file(self, template_path: str, data: dict = None) -> bytes:
         """
@@ -115,11 +128,12 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         self.register_function("createCanvas", self._create_canvas)
         self.register_function("save", self._save_canvas)
         self.register_function("setVar", self._set_var)
+        self.register_function("getBytes", self.get_bytes)
         
         # Shape functions from ShapesMixin
         self.register_function("drawRect", self._draw_rect)
         self.register_function("drawCircle", self._draw_circle)
-        self.register_function("drawRoundedRect", self._draw_rounded_rect)
+        self.register_function("drawRoundedRect", self._draw_rect) # Consolidated
         self.register_function("drawLine", self._draw_line)
         self.register_function("drawPolygon", self._draw_polygon)
         self.register_function("drawStar", self._draw_star)
@@ -128,8 +142,9 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         
         # Text functions from TextMixin
         self.register_function("drawText", self._draw_text)
-        self.register_function("drawTextStroke", self._draw_text_stroke)
-        self.register_function("drawTextGradient", self._draw_text_gradient)
+        self.register_function("text", self._draw_text) # Alias
+        self.register_function("drawTextMid", self._draw_text_mid)
+        self.register_function("drawTextIn", self._draw_text_in)
         self.register_function("toUpper", self._to_upper)
         self.register_function("toLower", self._to_lower)
         self.register_function("toTitle", self._to_title)
@@ -137,8 +152,6 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         self.register_function("wrapText", self._wrap_text)
         self.register_function("autoSizeText", self._auto_size_text)
         self.register_function("truncateText", self._truncate_text)
-        self.register_function("drawTextMid", self._draw_text_mid)
-        self.register_function("drawTextIn", self._draw_text_in)
         
         # Image functions from ImagesMixin
         self.register_function("drawImage", self._draw_image)
