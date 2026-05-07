@@ -1,0 +1,48 @@
+site_name: AlphaPIL
+site_description: A powerful and easy-to-use image generation library for Python.
+site_url: https://meralabs.github.io/AlphaPIL/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Syntax Guide: syntax.md
+  - Functions:
+    - Core: functions/core.md
+    - Geometric: functions/geometric.md
+    - Text: functions/text.md
+    - Images & Filters: functions/images.md
+    - Utils & Logic: functions/utils.md
+  - Examples: examples.md
