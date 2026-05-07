@@ -25,15 +25,18 @@ class ShapesMixin:
 
     def _draw_rect(self, x: str, y: str, width: str, height: str, 
                    color: str = "black", outline: str = None, fill: str = None, 
-                   outline_width: str = "1") -> str:
+                   outline_width: str = "1", anchor: str = "lt") -> str:
         self._ensure_canvas()
         try:
-            x1 = self._parse_position(x, 'x')
-            y1 = self._parse_position(y, 'y')
             w = self._parse_num(width)
             h = self._parse_num(height)
+            
+            # Apply anchor offset
+            ax, ay = self._get_anchor_offset(anchor, w, h)
+            x1 = self._parse_position(x, 'x') + ax
+            y1 = self._parse_position(y, 'y') + ay
+            
             lw = int(self._parse_num(outline_width))
-
             x2 = x1 + w
             y2 = y1 + h
             bbox = [(x1, y1), (x2, y2)]
@@ -52,12 +55,22 @@ class ShapesMixin:
 
     def _draw_circle(self, cx: str, cy: str, radius: str, 
                      color: str = "black", outline: str = None, fill: str = None,
-                     outline_width: str = "1") -> str:
+                     outline_width: str = "1", anchor: str = "mm") -> str:
         self._ensure_canvas()
         try:
-            center_x = self._parse_position(cx, 'x')
-            center_y = self._parse_position(cy, 'y')
             r = self._parse_num(radius)
+            w = h = r * 2
+            
+            # Apply anchor offset (Default 'mm' for circles)
+            ax, ay = self._get_anchor_offset(anchor, 0, 0) # Center is pivot for mm
+            # If anchor is 'lt', we must shift by radius to treat cx/cy as top-left
+            if anchor == 'lt':
+                center_x = self._parse_position(cx, 'x') + r
+                center_y = self._parse_position(cy, 'y') + r
+            else:
+                center_x = self._parse_position(cx, 'x')
+                center_y = self._parse_position(cy, 'y')
+
             lw = int(self._parse_num(outline_width))
 
             left = center_x - r
@@ -81,16 +94,19 @@ class ShapesMixin:
     def _draw_rounded_rect(self, x: str, y: str, width: str, height: str, 
                            radius: str = "10", color: str = "black", 
                            outline: str = None, fill: str = None,
-                           outline_width: str = "1") -> str:
+                           outline_width: str = "1", anchor: str = "lt") -> str:
         self._ensure_canvas()
         try:
-            x1 = self._parse_position(x, 'x')
-            y1 = self._parse_position(y, 'y')
             w = self._parse_num(width)
             h = self._parse_num(height)
+            
+            # Apply anchor offset
+            ax, ay = self._get_anchor_offset(anchor, w, h)
+            x1 = self._parse_position(x, 'x') + ax
+            y1 = self._parse_position(y, 'y') + ay
+            
             r = self._parse_num(radius)
             lw = int(self._parse_num(outline_width))
-
             x2 = x1 + w
             y2 = y1 + h
 
@@ -109,7 +125,7 @@ class ShapesMixin:
                 else:
                     self.draw.rectangle(bbox, fill=fill_color)
 
-            return f"Rounded rectangle drawn at ({x1}, {y1}) size {w}x{h} with radius {r}"
+            return f"Rounded rectangle drawn at ({x1}, {y1}) size {w}x{h}"
         except ValueError as e:
             raise ValueError(f"Invalid rounded rectangle parameters: {e}")
 

@@ -20,6 +20,7 @@ $drawRect[x;y;width;height;color;outline;fill;outline_width]
 | **outline** | `string` | Outline color. | `none` |
 | **fill** | `string` | Fill style (`none` or color). | `solid` |
 | **outline_width**| `int` | Thickness of the outline. | `1` |
+| **anchor** | `string` | Positioning pivot point. | `lt` |
 
 ## Example
 

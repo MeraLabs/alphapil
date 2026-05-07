@@ -261,6 +261,10 @@ class CanvasInterpreter:
             
             # Execute the function - only pass arguments that exist in the function signature
             safe_kwargs = {k: v for k, v in final_kwargs.items() if k in sig.parameters}
+            
+            # Debug log
+            print(f"[AlphaPIL] Executing: ${func_name} with {safe_kwargs}")
+            
             result = func(**safe_kwargs)
             
             # Handle async functions

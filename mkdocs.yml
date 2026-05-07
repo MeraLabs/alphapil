@@ -72,6 +72,9 @@ nav:
     - Masking:
       - createLayer: functions/masking/createLayer.md
       - mergeLayer: functions/masking/mergeLayer.md
+    - Groups:
+      - startGroup: functions/groups/startGroup.md
+      - endGroup: functions/groups/endGroup.md
     - Utils:
       - Overview: functions/utils.md
       - math: functions/utils/math.md

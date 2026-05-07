@@ -19,6 +19,7 @@ $drawCircle[cx;cy;radius;color;outline;fill;outline_width]
 | **outline** | `string` | Outline color. | `none` |
 | **fill** | `string` | Fill color/style. | `solid` |
 | **outline_width**| `int` | Stroke width. | `1` |
+| **anchor** | `string` | Positioning pivot point. | `mm` |
 
 ## Example
 

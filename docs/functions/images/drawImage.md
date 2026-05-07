@@ -20,10 +20,11 @@ $drawImage[x;y;image_path;width;height;opacity;radius;circle]
 | **opacity** | `int` | Opacity percentage (0-100). | `100` |
 | **radius** | `int` | Rounded corner radius. | `None` |
 | **circle** | `bool` | Crop to a circle (`true`/`false`). | `false` |
+| **anchor** | `string` | Positioning pivot point (e.g. `mm`, `lt`). | `lt` (`mm` if circle=true) |
 
 ## Example
 
 ```bash
-# Draw a user's avatar as a circle
-$drawImage[center;center;https://example.com/avatar.png;200;200;circle=true]
+# Draw a user's avatar as a circle centered at 200,200
+$drawImage[200;200;https://example.com/avatar.png;100;100;circle=true]
 ```

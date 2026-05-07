@@ -36,41 +36,27 @@ class ImagesMixin:
     async def _draw_image(self, x: str, y: str, image_path: str, 
                          width: str = None, height: str = None, 
                          opacity: str = "100", 
-                         radius: str = None, circle: str = "false") -> str:
+                         radius: str = None, circle: str = "false",
+                         anchor: str = None) -> str:
         """
         Draw an image on the canvas (Async).
-        
-        Handles both local files and URLs.
-        Supports resizing, opacity, rounded corners, and circular cropping.
-        
-        Args:
-            x: X coordinate
-            y: Y coordinate
-            image_path: Path to image file or URL
-            width: Target width (optional)
-            height: Target height (optional)
-            opacity: Opacity percentage (default: "100")
-            radius: Corner radius (optional, for rounded rect)
-            circle: "true" for circular crop
-            
-        Returns:
-            Confirmation message
         """
         self._ensure_canvas_for_images()
         
         try:
-            # Parse parameters
-            x_pos = int(self._parse_position(x, 'x'))
-            y_pos = int(self._parse_position(y, 'y'))
-            opacity_val = float(self._parse_num(opacity)) / 100.0
-            
             is_circle = str(circle).lower() in ['true', '1', 'yes', 'on']
-            radius_val = int(self._parse_num(radius)) if radius else 0
             
-            # Load image (Async)
+            # 1. Determine default anchor
+            # If circle=true, default to 'mm' (center), otherwise 'lt' (top-left)
+            if anchor is None:
+                final_anchor = "mm" if is_circle else "lt"
+            else:
+                final_anchor = anchor
+
+            # 2. Load image (Async)
             img = await self._load_image_async(image_path)
             
-            # Resize logic
+            # 3. Resize logic
             target_w = int(self._parse_num(width)) if width else None
             target_h = int(self._parse_num(height)) if height else None
             
@@ -85,48 +71,42 @@ class ImagesMixin:
                 target_w = int(target_h * aspect)
                 img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
             
-            # Update dimensions after resize
             w, h = img.size
+            radius_val = int(self._parse_num(radius)) if radius else 0
             
-            # Apply styling (Circle or Rounded)
+            # 4. Apply Anchor Offset
+            ax, ay = self._get_anchor_offset(final_anchor, w, h)
+            x_pos = int(self._parse_position(x, 'x') + ax)
+            y_pos = int(self._parse_position(y, 'y') + ay)
+            
+            opacity_val = float(self._parse_num(opacity)) / 100.0
+            
+            # 5. Styling (Circle or Rounded)
             if is_circle:
-                # Create circular mask
                 mask = Image.new("L", (w, h), 0)
-                mask_draw = ImageDraw.Draw(mask)
-                mask_draw.ellipse((0, 0, w, h), fill=255)
-                
-                # Apply mask
+                ImageDraw.Draw(mask).ellipse((0, 0, w, h), fill=255)
                 output = Image.new("RGBA", (w, h), (0,0,0,0))
                 output.paste(img, (0, 0), mask)
                 img = output
-                
             elif radius_val > 0:
-                # Create rounded rect mask
                 mask = Image.new("L", (w, h), 0)
-                mask_draw = ImageDraw.Draw(mask)
-                mask_draw.rounded_rectangle([(0, 0), (w, h)], radius=radius_val, fill=255)
-                
-                # Apply mask
+                ImageDraw.Draw(mask).rounded_rectangle([(0, 0), (w, h)], radius=radius_val, fill=255)
                 output = Image.new("RGBA", (w, h), (0,0,0,0))
                 output.paste(img, (0, 0), mask)
                 img = output
             
-            # Apply opacity
+            # 6. Apply opacity
             if opacity_val < 1.0:
-                if img.mode != 'RGBA':
-                    img = img.convert('RGBA')
-                alpha = img.split()[3]
-                alpha = alpha.point(lambda p: int(p * opacity_val))
-                img.putalpha(alpha)
+                if img.mode != 'RGBA': img = img.convert('RGBA')
+                r, g, b, a = img.split()
+                a = a.point(lambda p: int(p * opacity_val))
+                img = Image.merge('RGBA', (r, g, b, a))
             
-            # Draw on canvas
             if img.mode != 'RGBA':
                 img = img.convert('RGBA')
                 
-            # Use paste with alpha composite for proper blending
             self.canvas.paste(img, (x_pos, y_pos), img)
-            
-            return f"Image drawn at ({x_pos}, {y_pos})"
+            return f"Image drawn at ({x_pos}, {y_pos}) with anchor {final_anchor}"
             
         except Exception as e:
             raise ValueError(f"Failed to draw image: {e}")

@@ -39,6 +39,43 @@ Functions that are commonly used inside others include:
 *   **Text Utilities:** `$toUpper`, `$toLower`, `$substring`, `$length`
 *   **Color Utilities:** `$getHex`
 
+## Advanced Positioning
+
+### Anchors (Pivot Points)
+
+Most drawing functions support an `anchor` parameter. This defines which part of the object "sits" on the coordinates you provided.
+
+| Anchor | Description |
+| :--- | :--- |
+| **lt** | Left-Top (Default for most) |
+| **ct** | Center-Top |
+| **rt** | Right-Top |
+| **lm** | Left-Middle |
+| **mm** | Middle-Middle (Center) |
+| **rm** | Right-Middle |
+| **lb** | Left-Bottom |
+| **cb** | Center-Bottom |
+| **rb** | Right-Bottom |
+
+**Example:**
+```bash
+# Draws a 100x100 square centered exactly at 500,500
+$drawRect[500;500;100;100;red;anchor=mm]
+```
+
+### Coordinate Grouping
+
+Groups allow you to define a set of elements relative to a starting point. If you move the group, all elements inside move with it.
+
+```bash
+$startGroup[100;100]
+  $drawRect[0;0;50;50;blue]  # Drawn at 100,100
+  $drawCircle[25;25;10;white] # Drawn at 125,125
+$endGroup
+```
+
+---
+
 ## Variable Management
 
 ### Setting Variables

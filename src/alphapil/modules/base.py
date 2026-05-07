@@ -27,227 +27,96 @@ class AlphaMixin:
             'stroke_width': 1,
             'stroke_color': 'black'
         }
+        self._group_stack = [] # Stack of (x, y) offsets
 
-    def _get_state(self, key: str, default=None):
-        """Get state value with fallback"""
-        if not hasattr(self, '_state'):
-            self._init_state()
-        return self._state.get(key, default)
+    def _get_group_offset(self) -> Tuple[float, float]:
+        """Calculate total offset from all active groups."""
+        tx, ty = 0.0, 0.0
+        if hasattr(self, '_group_stack'):
+            for ox, oy in self._group_stack:
+                tx += ox
+                ty += oy
+        return tx, ty
 
-    def _set_state(self, key: str, value):
-        """Set state value"""
-        if not hasattr(self, '_state'):
-            self._init_state()
-        self._state[key] = value
+    def _start_group(self, x: str = "0", y: str = "0") -> str:
+        """Start a new coordinate group."""
+        if not hasattr(self, '_group_stack'):
+            self._group_stack = []
+        
+        ox = self._parse_position(x, 'x', ignore_stack=True)
+        oy = self._parse_position(y, 'y', ignore_stack=True)
+        self._group_stack.append((ox, oy))
+        return f"Group started at ({ox}, {oy})"
 
-    # -------------------------
-    # State Management Commands
-    # -------------------------
+    def _end_group(self) -> str:
+        """End the current coordinate group."""
+        if hasattr(self, '_group_stack') and self._group_stack:
+            self._group_stack.pop()
+            return "Group ended"
+        return "No active group to end"
 
-    def _cmd_set_font(self, font_name: str, size: str = None) -> str:
-        """Set current font and size."""
-        self._set_state('font', font_name)
-        if size:
-            self._set_state('font_size', self._parse_num(size))
-        return f"Font set to {font_name}" + (f" size {size}" if size else "")
+    def _get_anchor_offset(self, anchor: str, width: float, height: float) -> Tuple[float, float]:
+        """
+        Calculate pixel offset based on anchor string.
+        Supported: lt, ct, rt, lm, mm, rm, lb, cb, rb
+        """
+        anchor = str(anchor).lower().strip()
+        ax, ay = 0.0, 0.0
+        
+        # Horizontal
+        if 'c' in anchor or 'm' in anchor: ax = -width / 2
+        if 'r' in anchor: ax = -width
+        
+        # Vertical
+        if 'm' in anchor: ay = -height / 2
+        if 'b' in anchor: ay = -height
+        
+        return ax, ay
 
-    def _cmd_set_color(self, color: str) -> str:
-        """Set current default color."""
-        self._get_color(color)  # Validate color
-        self._set_state('color', color)
-        return f"Color set to {color}"
-
-    def _cmd_set_stroke(self, width: str, color: str = None) -> str:
-        """Set current stroke properties."""
-        self._set_state('stroke_width', self._parse_num(width))
-        if color:
-            self._get_color(color)  # Validate
-            self._set_state('stroke_color', color)
-        return f"Stroke set to width {width}" + (f" color {color}" if color else "")
-    
-    def _get_color(self, color_str: str) -> Union[Tuple[int, int, int], Tuple[int, int, int, int]]:
+    def _parse_position(self, pos_str: str, axis: str, ignore_stack: bool = False) -> float:
         """
-        Convert color string to RGB/RGBA tuple.
-        
-        Supports:
-        - Named colors: "red", "blue", "lightgray"
-        - Hex colors: "#FF0000", "#FF0000FF"
-        - RGB tuples: "255,0,0" or "(255,0,0)"
-        - RGBA tuples: "255,0,0,128" or "(255,0,0,128)"
-        
-        Args:
-            color_str: Color string in various formats
-            
-        Returns:
-            RGB or RGBA tuple
-            
-        Raises:
-            ValueError: If color format is invalid
-        """
-        if not color_str or color_str.lower() == "none":
-            return None
-        
-        # Remove parentheses if present
-        color_str = color_str.strip().lstrip('(').rstrip(')')
-        
-        # Handle comma-separated RGB/RGBA values
-        if ',' in color_str:
-            try:
-                parts = [int(p.strip()) for p in color_str.split(',')]
-                if len(parts) == 3:
-                    return tuple(parts)  # RGB
-                elif len(parts) == 4:
-                    return tuple(parts)  # RGBA
-                else:
-                    raise ValueError(f"Invalid color format: {color_str}")
-            except ValueError:
-                pass  # Fall through to other parsing methods
-        
-        # Use PIL's ImageColor for named colors and hex
-        try:
-            color = ImageColor.getrgb(color_str)
-            # Ensure it's always RGBA for consistent drawing behavior on layers
-            if len(color) == 3:
-                return color + (255,)
-            return color
-        except ValueError:
-            try:
-                # Try getting RGBA directly
-                return ImageColor.getcolor(color_str, "RGBA")
-            except ValueError:
-                raise ValueError(f"Unsupported color format: {color_str}")
-    
-    def _parse_num(self, num_str: str) -> Union[int, float]:
-        """
-        Parse string to number (int or float).
-        
-        Args:
-            num_str: String containing numeric value
-            
-        Returns:
-            Integer or float value
-            
-        Raises:
-            ValueError: If string cannot be parsed as number
-        """
-        try:
-            if '.' in num_str:
-                return float(num_str)
-            else:
-                return int(num_str)
-        except ValueError:
-            raise ValueError(f"Invalid number format: {num_str}")
-    
-    def _parse_coords(self, coord_str: str) -> Tuple[Union[int, float], Union[int, float]]:
-        """
-        Parse coordinate string into (x, y) tuple.
-        
-        Supports formats:
-        - "100,200"
-        - "(100,200)"
-        - "100.5,200.3"
-        
-        Args:
-            coord_str: Coordinate string
-            
-        Returns:
-            Tuple of (x, y) coordinates
-        """
-        coord_str = coord_str.strip().lstrip('(').rstrip(')')
-        parts = coord_str.split(',')
-        
-        if len(parts) != 2:
-            raise ValueError(f"Invalid coordinate format: {coord_str}")
-        
-        return (self._parse_num(parts[0].strip()), self._parse_num(parts[1].strip()))
-
-    def _parse_position(self, pos_str: str, axis: str) -> float:
-        """
-        Parse position string supporting:
-        - Absolute: "100"
-        - Keywords: "center", "left", "right", "top", "bottom", "middle"
-        - Offset: "center+50", "right-100"
-        - Percentage: "50%", "25%"
-        
-        Args:
-            pos_str: Position string
-            axis: 'x' or 'y' to determine canvas dimension
-            
-        Returns:
-            Absolute pixel position
+        Parse position string with support for coordinate stacking.
         """
         self._ensure_canvas()
         canvas_size = self.canvas.width if axis == 'x' else self.canvas.height
         
+        # Add group offset if not ignored
+        group_x, group_y = (0.0, 0.0) if ignore_stack else self._get_group_offset()
+        base_offset = group_x if axis == 'x' else group_y
+
         pos_str = str(pos_str).strip().lower()
         
         # Handle simple keywords
         if pos_str == 'center' or pos_str == 'middle':
-            return canvas_size / 2
+            return (canvas_size / 2) + base_offset
         
         if axis == 'x':
-            if pos_str == 'left': return 0
-            if pos_str == 'right': return canvas_size
+            if pos_str == 'left': return 0 + base_offset
+            if pos_str == 'right': return canvas_size + base_offset
         else:
-            if pos_str == 'top': return 0
-            if pos_str == 'bottom': return canvas_size
+            if pos_str == 'top': return 0 + base_offset
+            if pos_str == 'bottom': return canvas_size + base_offset
             
-        # Handle mid(a, b) / between(a, b)
+        # ... (rest of parsing logic) ...
         match_mid = re.match(r'^(?:mid|between)\(([^,;]+)[,;]([^,;]+)\)$', pos_str)
         if match_mid:
             p1_str, p2_str = match_mid.groups()
-            p1 = self._parse_position(p1_str, axis)
-            p2 = self._parse_position(p2_str, axis)
-            return (p1 + p2) / 2
+            p1 = self._parse_position(p1_str, axis, ignore_stack=True)
+            p2 = self._parse_position(p2_str, axis, ignore_stack=True)
+            return ((p1 + p2) / 2) + base_offset
 
-        # Handle parsing of complex expressions like "center+50" or "right-100"
-        base_val = 0
-        offset = 0
-        
-        # Check for percentages
-        if pos_str.endswith('%'):
-            try:
-                percent = float(pos_str[:-1])
-                return (percent / 100) * canvas_size
-            except ValueError:
-                pass
-                
-        # Parse logic for offsets
-        # Match pattern: keyword/number +/- number
-        # e.g. center+50, 100-20, right-50, 50%+10
+        # Parse logic for offsets (+/-)
         match = re.match(r'^([a-z0-9.%]+)\s*([+\-])\s*([0-9.]+)$', pos_str)
-        
         if match:
             base_str, op, off_str = match.groups()
-            
-            # Recurse for the base part (handles keywords and percentages)
-            # Use current function recursively but safeguard against infinite recursion if needed
-            # For simple keywords/percents, we can just call logic here or recursive
-            
-            # Simple base resolution
-            if base_str in ['center', 'middle']:
-                base_val = canvas_size / 2
-            elif base_str == 'left' and axis == 'x': base_val = 0
-            elif base_str == 'right' and axis == 'x': base_val = canvas_size
-            elif base_str == 'top' and axis == 'y': base_val = 0
-            elif base_str == 'bottom' and axis == 'y': base_val = canvas_size
-            elif base_str.endswith('%'):
-                try: 
-                    base_val = (float(base_str[:-1]) / 100) * canvas_size
-                except: base_val = 0
-            else:
-                try: base_val = float(base_str)
-                except: base_val = 0
-                
+            # Resolve base relative to canvas (ignore stack for base parts)
+            base_val = self._parse_position(base_str, axis, ignore_stack=True)
             offset = float(off_str)
-            
-            if op == '+':
-                return base_val + offset
-            else:
-                return base_val - offset
+            final_val = base_val + offset if op == '+' else base_val - offset
+            return final_val + base_offset
         
         # Fallback to simple number parsing
-        return self._parse_num(pos_str)
+        return self._parse_num(pos_str) + base_offset
 
     def _check_bounds(self, x: float, y: float, 
                       width: float = 0, height: float = 0) -> None:
