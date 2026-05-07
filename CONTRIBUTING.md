@@ -117,8 +117,8 @@ All tests should pass before you submit a PR.
 
 ## Documentation
 - The main README covers installation and usage.
-- Additional docs live in the `docs/` folder (if present) or are generated via `tools/gen_docs.py`.
-- When adding new features, update the relevant sections of the README or create new markdown files under `docs/`.
+- Additional docs live in the `docs/` folder.
+- When adding new features, update the relevant sections of the document.
 
 ---
 
@@ -141,7 +141,7 @@ By contributing, you agree that your contributions will be released under the sa
 ---
 
 ## Contact & Support
-- **Maintainer**: yogeswar142 (yogeswar@mera‑labs.com)
+- **Maintainer**: yogeswar142 (meralabs.official@gmail.com)
 - **Discord/Slack**: Join the community channel (link in the README) for live help.
 - **Issues**: Use the GitHub issue tracker for bugs and feature requests.
 
