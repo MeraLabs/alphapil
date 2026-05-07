@@ -1,6 +1,6 @@
 site_name: AlphaPIL
 site_description: A powerful and easy-to-use image generation library for Python.
-site_url: https://meralabs.github.io/AlphaPIL/
+site_url: https://meralabs.dev/alphapil/docs/
 
 theme:
   name: material

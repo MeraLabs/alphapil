@@ -25,4 +25,17 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install mkdocs-material
-      - run: mkdocs gh-deploy --force
+      - run: |
+          mkdocs build
+          mkdir -p site_deploy/alphapil/docs
+          cp -r site/* site_deploy/alphapil/docs/
+          cd site_deploy
+          touch .nojekyll
+          # If you have a CNAME file, ensure it stays at the root
+          echo "meralabs.dev" > CNAME
+          git init
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .
+          git commit -m "Deploy to alphapil/docs"
+          git push --force https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:gh-pages
