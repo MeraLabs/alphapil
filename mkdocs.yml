@@ -40,9 +40,39 @@ nav:
   - Getting Started: getting-started.md
   - Syntax Guide: syntax.md
   - Functions:
-    - Core: functions/core.md
-    - Geometric: functions/geometric.md
-    - Text: functions/text.md
-    - Images & Filters: functions/images.md
-    - Utils & Logic: functions/utils.md
+    - Core:
+      - Overview: functions/core.md
+      - createCanvas: functions/core/createCanvas.md
+      - save: functions/core/save.md
+      - setVar: functions/core/setVar.md
+      - setFont: functions/core/setFont.md
+      - loadFont: functions/core/loadFont.md
+      - setColor: functions/core/setColor.md
+      - setStroke: functions/core/setStroke.md
+    - Geometric:
+      - Overview: functions/geometric.md
+      - drawRect: functions/geometric/drawRect.md
+      - drawCircle: functions/geometric/drawCircle.md
+      - drawRoundedRect: functions/geometric/drawRoundedRect.md
+      - drawLine: functions/geometric/drawLine.md
+      - drawPolygon: functions/geometric/drawPolygon.md
+      - drawStar: functions/geometric/drawStar.md
+      - drawArc: functions/geometric/drawArc.md
+    - Text:
+      - Overview: functions/text.md
+      - drawText: functions/text/drawText.md
+      - drawTextStroke: functions/text/drawTextStroke.md
+      - drawTextGradient: functions/text/drawTextGradient.md
+      - drawTextMid: functions/text/drawTextMid.md
+    - Images:
+      - Overview: functions/images.md
+      - drawImage: functions/images/drawImage.md
+      - imageFilter: functions/images/imageFilter.md
+    - Masking:
+      - createLayer: functions/masking/createLayer.md
+      - mergeLayer: functions/masking/mergeLayer.md
+    - Utils:
+      - Overview: functions/utils.md
+      - math: functions/utils/math.md
+      - if: functions/utils/if.md
   - Examples: examples.md
