@@ -1,0 +1,10 @@
+AlphaPIL_Bot/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+.DS_Store
+.env
