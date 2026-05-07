@@ -17,6 +17,28 @@ $functionName[arg1;arg2;arg3]
 3. **Variables**: Use `{variable_name}` to inject values into arguments.
 4. **Colors**: Supports hex codes (`#ffffff`), RGB/RGBA, and common color names (`white`, `red`, etc.).
 
+## Function Nesting
+
+One of the most powerful features of AlphaPIL is **nesting**. Since functions return string values, you can use one function as an argument for another.
+
+### How it works
+The interpreter resolves functions from the **inside-out**. 
+
+**Example:**
+```bash
+$drawRect[10;10;$math[100 + 50];$random[20;80];red]
+```
+In this case:
+1. `$math[100 + 50]` is resolved to `150`.
+2. `$random[20;80]` is resolved to a random number (e.g., `42`).
+3. Finally, `$drawRect[10;10;150;42;red]` is executed.
+
+### Composable Functions
+Functions that are commonly used inside others include:
+*   **Math & Logic:** `$math`, `$if`, `$random`
+*   **Text Utilities:** `$toUpper`, `$toLower`, `$substring`, `$length`
+*   **Color Utilities:** `$getHex`
+
 ## Variable Management
 
 ### Setting Variables

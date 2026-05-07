@@ -20,3 +20,9 @@ $math[expression]
 $setVar[total;$math[50 * 2]]
 $drawText[10;10;Result: {total}]
 ```
+
+### Nesting
+Because `$math` returns a number string, it can be used inside other functions:
+```bash
+$drawRect[10;10;$math[100 + 50];50;red]
+```

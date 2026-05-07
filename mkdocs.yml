@@ -38,6 +38,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Python Integration: integration.md
   - Syntax Guide: syntax.md
   - Functions:
     - Core:
@@ -74,5 +75,6 @@ nav:
     - Utils:
       - Overview: functions/utils.md
       - math: functions/utils/math.md
+      - random: functions/utils/random.md
       - if: functions/utils/if.md
   - Examples: examples.md
