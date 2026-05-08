@@ -49,7 +49,7 @@ class TextMixin:
                         self._font_aliases[alias] = path # Store path as reference
                 return f"Remote font '{path}' loaded and cached as alias '{alias}'"
             except Exception as e:
-                raise RuntimeError(f"Error loading remote font: {e}")
+                raise RuntimeError(f"{e}\nProper Syntax: $loadFont[font_path;alias]")
         else:
             self._font_aliases[alias] = path
             return f"Local font alias '{alias}' registered for {path}"
@@ -209,43 +209,34 @@ class TextMixin:
             self.draw.text(**text_kwargs)
             return f"Text '{text}' drawn at ({x_pos}, {y_pos})"
         except ValueError as e:
-            raise ValueError(f"Invalid text parameters: {e}. Proper Syntax: $drawText[x;y;text;color;size;font;anchor;...]")
+            raise ValueError(f"{e}\nProper Syntax: $drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors]")
     
     def _to_upper(self, text: str) -> str:
         """
         Convert text to uppercase.
-        
-        Args:
-            text: Text to convert
-            
-        Returns:
-            Uppercase text
         """
-        return text.upper()
-    
+        try:
+            return str(text).upper()
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $toUpper[text]")
+
     def _to_lower(self, text: str) -> str:
         """
         Convert text to lowercase.
-        
-        Args:
-            text: Text to convert
-            
-        Returns:
-            Lowercase text
         """
-        return text.lower()
-    
+        try:
+            return str(text).lower()
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $toLower[text]")
+
     def _to_title(self, text: str) -> str:
         """
         Convert text to title case.
-        
-        Args:
-            text: Text to convert
-            
-        Returns:
-            Title case text
         """
-        return text.title()
+        try:
+            return str(text).title()
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $toTitle[text]")
     
     def _measure_text(self, text: str, size: str = "12", font: str = None) -> str:
         """
@@ -269,8 +260,8 @@ class TextMixin:
             height = bbox[3] - bbox[1]
             
             return f"{width},{height}"
-        except ValueError as e:
-            raise ValueError(f"Invalid text measurement parameters: {e}")
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $measureText[text;size;font]")
     
     def _wrap_text(self, text: str, max_width: str, size: str = "12", font: str = None) -> str:
         """
@@ -328,8 +319,8 @@ class TextMixin:
                     lines.append(' '.join(current_line))
             
             return '\n'.join(lines)
-        except ValueError as e:
-            raise ValueError(f"Invalid text wrapping parameters: {e}")
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $wrapText[text;width;size;font]")
 
     def _auto_size_text(self, text: str, max_width: str, start_size: str = "30", 
                         min_size: str = "10", font: str = None) -> str:
@@ -351,7 +342,7 @@ class TextMixin:
                 
             return str(m_size)
         except Exception as e:
-            raise ValueError(f"Invalid auto-size parameters: {e}")
+            raise ValueError(f"{e}\nProper Syntax: $autoSizeText[text;max_width;start_size;min_size;font]")
 
     def _truncate_text(self, text: str, max_width: str, size: str = "12", font: str = None, suffix: str = "...") -> str:
         """
@@ -375,7 +366,7 @@ class TextMixin:
                     return test_str
             return suffix
         except Exception as e:
-            raise ValueError(f"Invalid truncation parameters: {e}")
+            raise ValueError(f"{e}\nProper Syntax: $truncateText[text;width;size;font;suffix]")
 
     def _draw_text_stroke(self, text: str, x: str, y: str,
                           size: str, color: str,
@@ -560,7 +551,7 @@ class TextMixin:
                                   glow_color, glow_radius,
                                   max_width, truncate_width)
         except Exception as e:
-            raise ValueError(f"Failed to draw multifunctional text: {e}. Proper Syntax: $drawTextMid[x1;y1;x2;y2;text;color;size;font;...]")
+            raise ValueError(f"{e}\nProper Syntax: $drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;x;y;w;h;max_width;truncate_width]")
 
     def _draw_text_in(self, x: str = None, y: str = None, w: str = None, h: str = None, 
                       text: str = "", color: str = None, 
@@ -573,15 +564,16 @@ class TextMixin:
         """
         Alias for _draw_text_mid but optimized for box dimensions (x, y, w, h).
         """
-        return self._draw_text_mid(x1=x1, y1=y1, x2=x2, y2=y2, text=text, 
-                                 color=color, size=size, font=font, 
-                                 stroke_width=stroke_width, stroke_fill=stroke_fill,
-                                 shadow_color=shadow_color, shadow_offset=shadow_offset,
-                                 glow_color=glow_color, glow_radius=glow_radius,
-                                 x=x, y=y, w=w, h=h,
-                                 max_width=max_width, truncate_width=truncate_width)
+        try:
+            return self._draw_text_mid(x1=x1, y1=y1, x2=x2, y2=y2, text=text, 
+                                     color=color, size=size, font=font, 
+                                     stroke_width=stroke_width, stroke_fill=stroke_fill,
+                                     shadow_color=shadow_color, shadow_offset=shadow_offset,
+                                     glow_color=glow_color, glow_radius=glow_radius,
+                                     x=x, y=y, w=w, h=h,
+                                     max_width=max_width, truncate_width=truncate_width)
         except Exception as e:
-            raise ValueError(f"Failed to draw text in box: {e}. Proper Syntax: $drawTextIn[x;y;w;h;text;color;size;font;...]")
+            raise ValueError(f"{e}\nProper Syntax: $drawTextIn[x;y;w;h;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;x1;x2;y1;y2;max_width;truncate_width]")
 
     # Note: _draw_text_center and _draw_text_wrapped are now logically covered 
     # by _draw_text and _draw_text_mid with parameters.

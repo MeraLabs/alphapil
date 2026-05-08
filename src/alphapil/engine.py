@@ -202,10 +202,9 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
             self.canvas = Image.new("RGBA", (w, h), bg_color)
             self.draw = ImageDraw.Draw(self.canvas)
             
-            print(f"[AlphaPIL] Canvas created: {w}x{h} with color {color}")
             return f"Canvas created: {w}x{h}"
         except ValueError as e:
-            raise ValueError(f"Invalid canvas dimensions: {e}. Proper Syntax: $createCanvas[width;height;color]")
+            raise ValueError(f"{e}\nProper Syntax: $createCanvas[width;height;color]")
     
     def _set_var(self, name: str, value: str) -> str:
         """
@@ -218,8 +217,11 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         Returns:
             Confirmation message
         """
-        self.set_variable(name, value)
-        return f"Variable {name} set to {value}"
+        try:
+            self.set_variable(name, value)
+            return f"Variable {name} set to {value}"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $setVar[name;value]")
     
     def _save_canvas(self, filename: str = "output.png") -> str:
         """
@@ -237,7 +239,7 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
             self.canvas.save(filename, **save_params)
             return f"Canvas saved as {filename}"
         except Exception as e:
-            raise RuntimeError(f"Failed to save canvas: {e}")
+            raise ValueError(f"{e}\nProper Syntax: $save[filename]")
     
     def get_canvas_bytes(self, format: str = "PNG") -> bytes:
         """
@@ -246,16 +248,19 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         if not self.canvas:
             raise RuntimeError("No canvas available. Call $createCanvas first.")
         
-        img_bytes = io.BytesIO()
-        
-        # Set high quality parameters
-        save_params = {"format": format, "optimize": True}
-        if format.upper() in ["JPEG", "JPG"]:
-            save_params.update({"quality": 100, "subsampling": 0})
+        try:
+            img_bytes = io.BytesIO()
             
-        self.canvas.save(img_bytes, **save_params)
-        img_bytes.seek(0)
-        return img_bytes.getvalue()
+            # Set high quality parameters
+            save_params = {"format": format, "optimize": True}
+            if format.upper() in ["JPEG", "JPG"]:
+                save_params.update({"quality": 100, "subsampling": 0})
+                
+            self.canvas.save(img_bytes, **save_params)
+            img_bytes.seek(0)
+            return img_bytes.getvalue()
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $getBytes[format]")
     
     def reset(self) -> None:
         """Reset the canvas, drawing context, and state."""

@@ -31,20 +31,23 @@ class MaskingMixin:
         Returns:
             Confirmation message
         """
-        self._ensure_canvas_exists()
-        
-        if not hasattr(self, '_layers'):
-            self._init_masking()
+        try:
+            self._ensure_canvas_exists()
             
-        width, height = self.canvas.size
-        # Create transparent RGBA layer
-        layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-        self._layers[name] = layer
-        
-        # Determine target for drawing context if we switch immediately? 
-        # No, user must call switch explicitly usually.
-        
-        return f"Layer '{name}' created"
+            if not hasattr(self, '_layers'):
+                self._init_masking()
+                
+            width, height = self.canvas.size
+            # Create transparent RGBA layer
+            layer = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+            self._layers[name] = layer
+            
+            # Determine target for drawing context if we switch immediately? 
+            # No, user must call switch explicitly usually.
+            
+            return f"Layer '{name}' created"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $createLayer[name]")
 
     def _switch_layer(self, name: str) -> str:
         """
@@ -57,24 +60,27 @@ class MaskingMixin:
         Returns:
             Confirmation message
         """
-        self._ensure_canvas_exists()
-        
-        if not hasattr(self, '_layers'):
-            self._init_masking()
+        try:
+            self._ensure_canvas_exists()
             
-        name_lower = str(name).lower().strip()
-        
-        if name_lower in ['main', 'canvas', '']:
-            self._current_layer_name = None
-            self.draw = ImageDraw.Draw(self.canvas)
-            return "Switched drawing to main canvas"
+            if not hasattr(self, '_layers'):
+                self._init_masking()
+                
+            name_lower = str(name).lower().strip()
             
-        if name not in self._layers:
-            raise ValueError(f"Layer '{name}' does not exist. Create it first with $createLayer")
-            
-        self._current_layer_name = name
-        self.draw = ImageDraw.Draw(self._layers[name])
-        return f"Switched drawing to layer '{name}'"
+            if name_lower in ['main', 'canvas', '']:
+                self._current_layer_name = None
+                self.draw = ImageDraw.Draw(self.canvas)
+                return "Switched drawing to main canvas"
+                
+            if name not in self._layers:
+                raise ValueError(f"Layer '{name}' does not exist. Create it first with $createLayer")
+                
+            self._current_layer_name = name
+            self.draw = ImageDraw.Draw(self._layers[name])
+            return f"Switched drawing to layer '{name}'"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $switchLayer[name]")
     
     def _merge_layer(self, name: str, x: str = "0", y: str = "0", opacity: str = "100", target: str = "main") -> str:
         """
@@ -90,68 +96,71 @@ class MaskingMixin:
         Returns:
             Confirmation message
         """
-        self._ensure_canvas_exists()
-        
-        if not hasattr(self, '_layers') or name not in self._layers:
-            raise ValueError(f"Layer '{name}' does not exist")
-            
-        layer = self._layers[name]
-        
-        # Parse arguments
-        target_x = int(self._parse_position(x, 'x'))
-        target_y = int(self._parse_position(y, 'y'))
         try:
-            opacity_val = float(self._parse_num(opacity)) / 100.0
-        except:
-            opacity_val = 1.0
-        
-        # Create copy to merge so we don't modify original layer state
-        to_merge = layer.copy()
-        
-        # Apply opacity if needed
-        if opacity_val < 1.0:
-            if to_merge.mode != 'RGBA':
-                to_merge = to_merge.convert('RGBA')
+            self._ensure_canvas_exists()
             
-            # Multiply alpha channel by opacity
-            # split() returns tuple (r, g, b, a)
-            r, g, b, a = to_merge.split()
-            a = a.point(lambda p: int(p * opacity_val))
-            to_merge = Image.merge('RGBA', (r, g, b, a))
+            if not hasattr(self, '_layers') or name not in self._layers:
+                raise ValueError(f"Layer '{name}' does not exist")
+                
+            layer = self._layers[name]
             
-        # Determine target image
-        target_name = str(target).lower().strip()
-        
-        if target_name in ['main', 'canvas', '']:
-            target_img = self.canvas
-            # Ensure main canvas is RGBA for proper blending if we have a layer
-            if target_img.mode != 'RGBA':
-                target_img = target_img.convert('RGBA')
-                self.canvas = target_img
-            target_is_main = True
-        else:
-            if target not in self._layers:
-                raise ValueError(f"Target layer '{target}' does not exist")
-            target_img = self._layers[target]
-            target_is_main = False
+            # Parse arguments
+            target_x = int(self._parse_position(x, 'x'))
+            target_y = int(self._parse_position(y, 'y'))
+            try:
+                opacity_val = float(self._parse_num(opacity)) / 100.0
+            except:
+                opacity_val = 1.0
             
-        # Paste with alpha composite logic
-        # Using to_merge as mask enables proper alpha blending
-        if to_merge.mode == 'RGBA':
-            target_img.paste(to_merge, (target_x, target_y), to_merge)
-        else:
-            target_img.paste(to_merge, (target_x, target_y))
-        
-        # Update drawing context based on new image object if needed
-        if self._current_layer_name:
-            # If we were drawing on a layer, stay on it (unless it was converted/replaced)
-            # Actually, to be safe, always re-init draw if the target was the current target
-            if not target_is_main and self._current_layer_name == target:
-                self.draw = ImageDraw.Draw(self._layers[self._current_layer_name])
-        elif target_is_main:
-            self.draw = ImageDraw.Draw(self.canvas)
+            # Create copy to merge so we don't modify original layer state
+            to_merge = layer.copy()
             
-        return f"Merged layer '{name}' onto {'main canvas' if target_is_main else 'layer ' + target}"
+            # Apply opacity if needed
+            if opacity_val < 1.0:
+                if to_merge.mode != 'RGBA':
+                    to_merge = to_merge.convert('RGBA')
+                
+                # Multiply alpha channel by opacity
+                # split() returns tuple (r, g, b, a)
+                r, g, b, a = to_merge.split()
+                a = a.point(lambda p: int(p * opacity_val))
+                to_merge = Image.merge('RGBA', (r, g, b, a))
+                
+            # Determine target image
+            target_name = str(target).lower().strip()
+            
+            if target_name in ['main', 'canvas', '']:
+                target_img = self.canvas
+                # Ensure main canvas is RGBA for proper blending if we have a layer
+                if target_img.mode != 'RGBA':
+                    target_img = target_img.convert('RGBA')
+                    self.canvas = target_img
+                target_is_main = True
+            else:
+                if target not in self._layers:
+                    raise ValueError(f"Target layer '{target}' does not exist")
+                target_img = self._layers[target]
+                target_is_main = False
+                
+            # Paste with alpha composite logic
+            # Using to_merge as mask enables proper alpha blending
+            if to_merge.mode == 'RGBA':
+                target_img.paste(to_merge, (target_x, target_y), to_merge)
+            else:
+                target_img.paste(to_merge, (target_x, target_y))
+            
+            # Update drawing context based on new image object if needed
+            if self._current_layer_name:
+                # If we were drawing on a layer, stay on it (unless it was converted/replaced)
+                # Actually, to be safe, always re-init draw if the target was the current target
+                if not target_is_main and self._current_layer_name == target:
+                    self.draw = ImageDraw.Draw(self._layers[self._current_layer_name])
+            elif target_is_main:
+                self.draw = ImageDraw.Draw(self.canvas)
+                
+            return f"Merged layer '{name}' onto {'main canvas' if target_is_main else 'layer ' + target}"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $mergeLayer[name;x;y;opacity;target]")
         
     def _apply_mask(self, mask_path: str, x: str = "0", y: str = "0", invert: str = "false") -> str:
         """
@@ -167,46 +176,49 @@ class MaskingMixin:
         Returns:
             Confirmation message
         """
-        self._ensure_canvas_exists()
-        
-        # Load mask image
         try:
-            mask_img = Image.open(mask_path).convert('L')
+            self._ensure_canvas_exists()
+            
+            # Load mask image
+            try:
+                mask_img = Image.open(mask_path).convert('L')
+            except Exception as e:
+                # Try as variable replacement or existing layer? 
+                # For now assume path
+                raise ValueError(f"Failed to load mask image: {e}")
+                
+            should_invert = str(invert).lower() in ['true', '1', 'yes', 'on']
+            if should_invert:
+                mask_img = ImageChops.invert(mask_img)
+                
+            # Target
+            target_img = self.canvas
+            if self._current_layer_name and self._current_layer_name in self._layers:
+                target_img = self._layers[self._current_layer_name]
+                
+            if target_img.mode != 'RGBA':
+                target_img = target_img.convert('RGBA')
+                if not self._current_layer_name:
+                    self.canvas = target_img
+            
+            # Positioning
+            target_x = int(self._parse_position(x, 'x'))
+            target_y = int(self._parse_position(y, 'y'))
+            
+            # Create full size mask canvas
+            width, height = target_img.size
+            full_mask = Image.new('L', (width, height), 255) # White = opaque
+            full_mask.paste(mask_img, (target_x, target_y))
+            
+            # Combine alpha
+            current_alpha = target_img.split()[3]
+            new_alpha = ImageChops.multiply(current_alpha, full_mask)
+            
+            target_img.putalpha(new_alpha)
+            
+            return f"Applied mask from {mask_path}"
         except Exception as e:
-            # Try as variable replacement or existing layer? 
-            # For now assume path
-            raise ValueError(f"Failed to load mask image: {e}")
-            
-        should_invert = str(invert).lower() in ['true', '1', 'yes', 'on']
-        if should_invert:
-            mask_img = ImageChops.invert(mask_img)
-            
-        # Target
-        target_img = self.canvas
-        if self._current_layer_name and self._current_layer_name in self._layers:
-            target_img = self._layers[self._current_layer_name]
-            
-        if target_img.mode != 'RGBA':
-            target_img = target_img.convert('RGBA')
-            if not self._current_layer_name:
-                self.canvas = target_img
-        
-        # Positioning
-        target_x = int(self._parse_position(x, 'x'))
-        target_y = int(self._parse_position(y, 'y'))
-        
-        # Create full size mask canvas
-        width, height = target_img.size
-        full_mask = Image.new('L', (width, height), 255) # White = opaque
-        full_mask.paste(mask_img, (target_x, target_y))
-        
-        # Combine alpha
-        current_alpha = target_img.split()[3]
-        new_alpha = ImageChops.multiply(current_alpha, full_mask)
-        
-        target_img.putalpha(new_alpha)
-        
-        return f"Applied mask from {mask_path}"
+            raise ValueError(f"{e}\nProper Syntax: $applyMask[mask_path;x;y;invert]")
 
     def _ensure_canvas_exists(self):
         """Helper to ensure canvas exists"""

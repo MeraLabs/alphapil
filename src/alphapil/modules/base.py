@@ -57,12 +57,15 @@ class AlphaMixin:
         if not hasattr(self, '_group_stack'):
             self._group_stack = []
         
-        # Parse x, y as absolute (ignore current stack)
-        ox = self._parse_position(x, 'x', ignore_stack=True)
-        oy = self._parse_position(y, 'y', ignore_stack=True)
-        
-        self._group_stack.append((ox, oy))
-        return f"Group started at absolute origin ({ox}, {oy})"
+        try:
+            # Parse x, y as absolute (ignore current stack)
+            ox = self._parse_position(x, 'x', ignore_stack=True)
+            oy = self._parse_position(y, 'y', ignore_stack=True)
+            
+            self._group_stack.append((ox, oy))
+            return f"Group started at absolute origin ({ox}, {oy})"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $startGroup[x;y]")
 
     def _end_group(self) -> str:
         """End the current coordinate group."""
@@ -77,24 +80,33 @@ class AlphaMixin:
 
     def _cmd_set_font(self, font_name: str, size: str = None) -> str:
         """Set current font and size."""
-        self._set_state('font', font_name)
-        if size:
-            self._set_state('font_size', self._parse_num(size))
-        return f"Font set to {font_name}" + (f" size {size}" if size else "")
+        try:
+            self._set_state('font', font_name)
+            if size:
+                self._set_state('font_size', self._parse_num(size))
+            return f"Font set to {font_name}" + (f" size {size}" if size else "")
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $setFont[font_path;size]")
 
     def _cmd_set_color(self, color: str) -> str:
         """Set current default color."""
-        self._get_color(color)  # Validate color
-        self._set_state('color', color)
-        return f"Color set to {color}"
+        try:
+            self._get_color(color)  # Validate color
+            self._set_state('color', color)
+            return f"Color set to {color}"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $setColor[color]")
 
     def _cmd_set_stroke(self, width: str, color: str = None) -> str:
         """Set current stroke properties."""
-        self._set_state('stroke_width', self._parse_num(width))
-        if color:
-            self._get_color(color)  # Validate
-            self._set_state('stroke_color', color)
-        return f"Stroke set to width {width}" + (f" color {color}" if color else "")
+        try:
+            self._set_state('stroke_width', self._parse_num(width))
+            if color:
+                self._get_color(color)  # Validate
+                self._set_state('stroke_color', color)
+            return f"Stroke set to width {width}" + (f" color {color}" if color else "")
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $setStroke[width;color]")
     
     # -------------------------
     # Helper Methods
@@ -131,7 +143,7 @@ class AlphaMixin:
             # Fallback for common web colors if Pillow fails
             if color_str.startswith('#'):
                 return ImageColor.getcolor(color_str, "RGBA")
-            raise ValueError(f"Unsupported color format: {color_str}")
+            raise ValueError(f"Unknown color: {color_str}")
     
     def _get_anchor_offset(self, anchor: str, width: float, height: float) -> Tuple[float, float]:
         """
@@ -164,7 +176,7 @@ class AlphaMixin:
             else:
                 return int(num_str)
         except ValueError:
-            raise ValueError(f"Invalid number format: {num_str}")
+            raise ValueError(f"Invalid number: {num_str}")
     
     def _parse_coords(self, coord_str: str) -> Tuple[Union[int, float], Union[int, float]]:
         """
@@ -174,7 +186,7 @@ class AlphaMixin:
         parts = coord_str.split(',')
         
         if len(parts) != 2:
-            raise ValueError(f"Invalid coordinate format: {coord_str}")
+            raise ValueError(f"Invalid coordinates: {coord_str}")
         
         return (self._parse_num(parts[0].strip()), self._parse_num(parts[1].strip()))
 
@@ -229,7 +241,7 @@ class AlphaMixin:
         except ValueError:
             # If not a number, maybe it's an unrecognized keyword?
             # Return 0 or raise error? For now, re-raise original error
-            raise ValueError(f"Invalid position value: {pos_str}")
+            raise ValueError(f"Invalid position: {pos_str}")
 
     def _check_bounds(self, x: float, y: float, 
                       width: float = 0, height: float = 0) -> None:

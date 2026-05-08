@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "alphapil"
-version = "0.1.3"
+version = "0.1.6"
 description = "An asynchronous, template-based image generation engine"
-authors = [{name = "AlphaPIL Team", email = "team@alphapil.dev"}]
+authors = [{name = "MeraLabs", email = "meralabs.official@gmail.com"}]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.8"

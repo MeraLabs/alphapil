@@ -108,7 +108,7 @@ class ImagesMixin:
             return f"Image drawn at ({x_pos}, {y_pos}) with anchor {final_anchor}"
             
         except Exception as e:
-            raise ValueError(f"Failed to draw image: {e}. Proper Syntax: $drawImage[x;y;path_or_url;width;height;opacity;radius;circle;anchor]")
+            raise ValueError(f"{e}\nProper Syntax: $drawImage[x;y;image_path;width;height;opacity;radius;circle;anchor]")
 
     async def _load_image_async(self, path: str) -> Image.Image:
         """Helper to load image from path or URL asynchronously."""
@@ -167,7 +167,7 @@ class ImagesMixin:
             self.draw = ImageDraw.Draw(self.canvas)
             return f"Brightness adjusted to {factor}"
         except Exception as e:
-            raise ValueError(f"Brightness adjustment failed: {e}")
+            raise ValueError(f"{e}")
 
     # -------------------------------------------------
 
@@ -185,7 +185,7 @@ class ImagesMixin:
             self.draw = ImageDraw.Draw(self.canvas)
             return f"Contrast adjusted to {factor}"
         except Exception as e:
-            raise ValueError(f"Contrast adjustment failed: {e}")
+            raise ValueError(f"{e}")
 
     # -------------------------------------------------
 
@@ -211,7 +211,7 @@ class ImagesMixin:
             return f"Canvas colorized with {color}"
 
         except Exception as e:
-            raise ValueError(f"Colorize failed: {e}")
+            raise ValueError(f"{e}")
 
     def _image_filter(self, filter_name: str) -> str:
         """Apply a filter to the current canvas."""
@@ -236,13 +236,16 @@ class ImagesMixin:
             self.draw = ImageDraw.Draw(self.canvas)
             return f"Applied filter: {filter_name}"
         else:
-            raise ValueError(f"Unsupported filter: {filter_name}")
+            raise ValueError(f"Unsupported filter: {filter_name}\nProper Syntax: $imageFilter[filter_name]")
 
     def clear_image_cache(self) -> str:
         """Clear the image cache."""
-        if hasattr(self, '_image_cache'):
-            self._image_cache.clear()
-        return "Image cache cleared"
+        try:
+            if hasattr(self, '_image_cache'):
+                self._image_cache.clear()
+            return "Image cache cleared"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $clearImageCache[]")
 
     async def _use_image_as_canvas(self, path: str, h_var: str = None, w_var: str = None,
                                    fixed_width: str = None, fixed_height: str = None) -> str:
@@ -299,4 +302,4 @@ class ImagesMixin:
             return f"Canvas initialized from image: {path} ({self.canvas_size[0]}x{self.canvas_size[1]})"
             
         except Exception as e:
-            raise ValueError(f"Failed to use image as canvas: {e}")
+            raise ValueError(f"{e}\nProper Syntax: $useImageAsCanvas[path;h_var;w_var;fixed_width;fixed_height]")

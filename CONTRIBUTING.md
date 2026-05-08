@@ -141,7 +141,7 @@ By contributing, you agree that your contributions will be released under the sa
 ---
 
 ## Contact & Support
-- **Maintainer**: yogeswar142 (meralabs.official@gmail.com)
+- **Maintainer**: MeraLabs (meralabs.official@gmail.com)
 - **Discord/Slack**: Join the community channel (link in the README) for live help.
 - **Issues**: Use the GitHub issue tracker for bugs and feature requests.
 

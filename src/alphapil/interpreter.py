@@ -85,14 +85,26 @@ class CanvasInterpreter:
         while i < len(args_str):
             char = args_str[i]
             
-            if char in ('"', "'") and not in_quotes:
-                in_quotes = True
-                quote_char = char
-                current_arg += char
-            elif char == quote_char and in_quotes:
-                in_quotes = False
-                quote_char = None
-                current_arg += char
+            # ONLY treat as quote if it's the first non-whitespace character of the current_arg
+            # or if we are already inside a quote.
+            if char in ('"', "'"):
+                if not in_quotes:
+                    if not current_arg.strip():
+                        in_quotes = True
+                        quote_char = char
+                        # Don't add the wrapping quote to current_arg
+                    else:
+                        # Quote is in the middle of a string (like 18' or "Don't")
+                        # Treat it as a literal character
+                        current_arg += char
+                elif char == quote_char:
+                    # Closing the wrapping quote
+                    in_quotes = False
+                    quote_char = None
+                    # Don't add the wrapping quote to current_arg
+                else:
+                    # Different quote char inside quotes (e.g. 'He said "Hello"')
+                    current_arg += char
             elif not in_quotes:
                 if char in ('[', '('):
                     nesting_depth += 1
@@ -195,7 +207,7 @@ class CanvasInterpreter:
                 else:
                     result = str(result)
             except Exception as e:
-                raise RuntimeError(f"Error in nested function ${func_name}: {e}")
+                raise RuntimeError(f"{e}")
             
             # Replace in original string
             arg = arg[:match.start()] + result + arg[match.end():]
@@ -262,9 +274,6 @@ class CanvasInterpreter:
             # Execute the function - only pass arguments that exist in the function signature
             safe_kwargs = {k: v for k, v in final_kwargs.items() if k in sig.parameters}
             
-            # Debug log
-            print(f"[AlphaPIL] Executing: ${func_name} with {safe_kwargs}")
-            
             result = func(**safe_kwargs)
             
             # Handle async functions
@@ -277,8 +286,7 @@ class CanvasInterpreter:
             
             return str(result)
         except Exception as e:
-            # Provide more detailed error info for debugging
-            raise RuntimeError(f"Error executing function ${func_name} with args {args}: {e}")
+            raise RuntimeError(f"{e}")
     
     async def parse(self, template: str) -> str:
         """
@@ -310,10 +318,7 @@ class CanvasInterpreter:
         while iteration < max_iterations:
             iteration += 1
             
-            # Step 1: Resolve variables first
-            result = self._resolve_variables(result)
-            
-            # Step 2: Find the innermost function call
+            # Step 1: Find the innermost function call
             match = self._find_innermost_function(result)
             
             if not match:
@@ -322,7 +327,7 @@ class CanvasInterpreter:
             func_name = match.group(1)
             args_str = match.group(2)
             
-            # Step 3: Parse and preprocess arguments
+            # Step 2: Parse and preprocess arguments
             # This recursively resolves all variables and nested functions in each argument
             args = self._parse_arguments(args_str)
             
@@ -331,13 +336,13 @@ class CanvasInterpreter:
             for arg in args:
                 processed_args.append(await self._preprocess_argument(arg))
             
-            # Step 4: Execute function with fully resolved arguments
+            # Step 3: Execute function with fully resolved arguments
             try:
                 func_result = await self._execute_function(func_name, processed_args)
             except Exception as e:
-                raise RuntimeError(f"Failed to execute ${func_name}: {e}")
+                raise RuntimeError(f"{e}")
             
-            # Step 5: Replace the function call with its result
+            # Step 4: Replace the function call with its result
             result = result[:match.start()] + func_result + result[match.end():]
         
         if iteration >= max_iterations:
