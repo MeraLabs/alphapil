@@ -25,5 +25,5 @@ $useImageAsCanvas[assets/bg.png;h;w;800;600]
 ### Applying Filters
 ```bash
 $imageFilter[blur]
-$imageFilter[grayscale]
+$imageFilter[sharpen]
 ```

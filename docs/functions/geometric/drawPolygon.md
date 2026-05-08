@@ -21,5 +21,5 @@ $drawPolygon[points_list;color;outline;fill;outline_width]
 ## Example
 
 ```bash
-$drawPolygon[100,10;190,190;10,190;gold] # Draws a triangle
+$drawPolygon[100,10,190,190,10,190;gold] # Draws a triangle
 ```

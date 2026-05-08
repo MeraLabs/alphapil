@@ -108,7 +108,7 @@ class ImagesMixin:
             return f"Image drawn at ({x_pos}, {y_pos}) with anchor {final_anchor}"
             
         except Exception as e:
-            raise ValueError(f"Failed to draw image: {e}")
+            raise ValueError(f"Failed to draw image: {e}. Proper Syntax: $drawImage[x;y;path_or_url;width;height;opacity;radius;circle;anchor]")
 
     async def _load_image_async(self, path: str) -> Image.Image:
         """Helper to load image from path or URL asynchronously."""

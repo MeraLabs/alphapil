@@ -133,7 +133,7 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         # Shape functions from ShapesMixin
         self.register_function("drawRect", self._draw_rect)
         self.register_function("drawCircle", self._draw_circle)
-        self.register_function("drawRoundedRect", self._draw_rect) # Consolidated
+        self.register_function("drawRoundedRect", self._draw_rounded_rect)
         self.register_function("drawLine", self._draw_line)
         self.register_function("drawPolygon", self._draw_polygon)
         self.register_function("drawStar", self._draw_star)
@@ -205,7 +205,7 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
             print(f"[AlphaPIL] Canvas created: {w}x{h} with color {color}")
             return f"Canvas created: {w}x{h}"
         except ValueError as e:
-            raise ValueError(f"Invalid canvas dimensions: {e}")
+            raise ValueError(f"Invalid canvas dimensions: {e}. Proper Syntax: $createCanvas[width;height;color]")
     
     def _set_var(self, name: str, value: str) -> str:
         """

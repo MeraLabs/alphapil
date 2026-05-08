@@ -24,8 +24,8 @@ class ShapesMixin:
     # -------------------------
 
     def _draw_rect(self, x: str, y: str, width: str, height: str, 
-                   radius: str = "0", color: str = None, outline: str = None, fill: str = None, 
-                   outline_width: str = None, anchor: str = "lt") -> str:
+                   color: str = None, outline: str = None, fill: str = None, 
+                   outline_width: str = None, radius: str = "0", anchor: str = "lt") -> str:
         self._ensure_canvas()
         try:
             w = self._parse_num(width)
@@ -67,7 +67,17 @@ class ShapesMixin:
 
             return f"Rectangle drawn at ({x1}, {y1}) size {w}x{h}" + (f" with radius {r}" if r > 0 else "")
         except ValueError as e:
-            raise ValueError(f"Invalid rectangle parameters: {e}")
+            raise ValueError(f"Invalid rectangle parameters: {e}. Proper Syntax: $drawRect[x;y;width;height;color;outline;fill;outline_width;radius;anchor]")
+
+    def _draw_rounded_rect(self, x: str, y: str, width: str, height: str, radius: str = "10",
+                           color: str = None, outline: str = None, fill: str = None,
+                           outline_width: str = None, anchor: str = "lt") -> str:
+        """
+        Draw a rounded rectangle with specific parameter order from docs.
+        """
+        return self._draw_rect(x=x, y=y, width=width, height=height, radius=radius,
+                              color=color, outline=outline, fill=fill,
+                              outline_width=outline_width, anchor=anchor)
 
     def _draw_circle(self, cx: str, cy: str, radius: str, 
                      color: str = None, outline: str = None, fill: str = None,
@@ -113,7 +123,7 @@ class ShapesMixin:
 
             return f"Circle drawn at ({x_pos+r}, {y_pos+r}) with radius {r}"
         except ValueError as e:
-            raise ValueError(f"Invalid circle parameters: {e}")
+            raise ValueError(f"Invalid circle parameters: {e}. Proper Syntax: $drawCircle[cx;cy;radius;color;outline;fill;outline_width;anchor]")
 
     def _draw_line(self, x1: str, y1: str, x2: str, y2: str, 
                    color: str = None, width: str = None) -> str:
@@ -135,7 +145,7 @@ class ShapesMixin:
 
             return f"Line drawn from ({start_x}, {start_y}) to ({end_x}, {end_y})"
         except ValueError as e:
-            raise ValueError(f"Invalid line parameters: {e}")
+            raise ValueError(f"Invalid line parameters: {e}. Proper Syntax: $drawLine[x1;y1;x2;y2;color;width]")
 
     # -------------------------
     # NEW METHODS ADDED
@@ -176,7 +186,7 @@ class ShapesMixin:
 
             return f"Polygon drawn with {len(points)} points"
         except ValueError as e:
-            raise ValueError(f"Invalid polygon parameters: {e}")
+            raise ValueError(f"Invalid polygon parameters: {e}. Proper Syntax: $drawPolygon[points_list;color;outline;fill;outline_width]")
 
     def _draw_triangle(self, x1: str, y1: str,
                        x2: str, y2: str,
@@ -209,7 +219,7 @@ class ShapesMixin:
 
             return "Triangle drawn"
         except ValueError as e:
-            raise ValueError(f"Invalid triangle parameters: {e}")
+            raise ValueError(f"Invalid triangle parameters: {e}. Proper Syntax: $drawTriangle[x1;y1;x2;y2;x3;y3;color;outline;fill;outline_width]")
 
     def _draw_star(self, x: str, y: str, points: str,
                    outer_radius: str, inner_radius: str,
@@ -256,7 +266,7 @@ class ShapesMixin:
 
             return f"Star drawn at ({cx}, {cy}) with {num_points} points"
         except ValueError as e:
-            raise ValueError(f"Invalid star parameters: {e}")
+            raise ValueError(f"Invalid star parameters: {e}. Proper Syntax: $drawStar[x;y;points;outer_radius;inner_radius;color;outline;fill;outline_width]")
 
     def _draw_arc(self, x: str, y: str, w: str, h: str,
                   start_angle: str, end_angle: str,
@@ -282,4 +292,4 @@ class ShapesMixin:
 
             return f"Arc drawn at ({x1}, {y1}) from {start}° to {end}°"
         except ValueError as e:
-            raise ValueError(f"Invalid arc parameters: {e}")
+            raise ValueError(f"Invalid arc parameters: {e}. Proper Syntax: $drawArc[x;y;w;h;start_angle;end_angle;color;width]")

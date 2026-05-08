@@ -7,6 +7,12 @@ Helper functions for calculations and conditional rendering.
 | **math** | `$math[expression]` |
 | **if** | `$if[condition;true_val;false_val]` |
 | **random** | `$random[min;max]` |
+| **length** | `$length[text]` |
+| **replace** | `$replace[text;old;new]` |
+| **substring** | `$substring[text;start;end]` |
+| **split** | `$split[text;separator]` |
+| **join** | `$join[separator;item1;item2;...]` |
+| **getHex** | `$getHex[color_name]` |
 
 ## Examples
 

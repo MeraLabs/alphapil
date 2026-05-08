@@ -209,7 +209,7 @@ class TextMixin:
             self.draw.text(**text_kwargs)
             return f"Text '{text}' drawn at ({x_pos}, {y_pos})"
         except ValueError as e:
-            raise ValueError(f"Invalid text parameters: {e}")
+            raise ValueError(f"Invalid text parameters: {e}. Proper Syntax: $drawText[x;y;text;color;size;font;anchor;...]")
     
     def _to_upper(self, text: str) -> str:
         """
@@ -560,7 +560,7 @@ class TextMixin:
                                   glow_color, glow_radius,
                                   max_width, truncate_width)
         except Exception as e:
-            raise ValueError(f"Failed to draw multifunctional text: {e}")
+            raise ValueError(f"Failed to draw multifunctional text: {e}. Proper Syntax: $drawTextMid[x1;y1;x2;y2;text;color;size;font;...]")
 
     def _draw_text_in(self, x: str = None, y: str = None, w: str = None, h: str = None, 
                       text: str = "", color: str = None, 
@@ -580,6 +580,8 @@ class TextMixin:
                                  glow_color=glow_color, glow_radius=glow_radius,
                                  x=x, y=y, w=w, h=h,
                                  max_width=max_width, truncate_width=truncate_width)
+        except Exception as e:
+            raise ValueError(f"Failed to draw text in box: {e}. Proper Syntax: $drawTextIn[x;y;w;h;text;color;size;font;...]")
 
     # Note: _draw_text_center and _draw_text_wrapped are now logically covered 
     # by _draw_text and _draw_text_mid with parameters.

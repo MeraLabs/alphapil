@@ -4,7 +4,8 @@ Functions for drawing basic and complex geometric shapes.
 
 | Function | Syntax |
 | :--- | :--- |
-| **drawRect** | `$drawRect[x;y;width;height;radius;color;outline;fill;...]` |
+| **drawRect** | `$drawRect[x;y;width;height;color;outline;fill;outline_width;radius;anchor]` |
+| **drawRoundedRect** | `$drawRoundedRect[x;y;width;height;radius;color;outline;fill;outline_width]` |
 | **drawCircle** | `$drawCircle[cx;cy;radius;color;outline;fill;outline_width]` |
 | **drawLine** | `$drawLine[x1;y1;x2;y2;color;width]` |
 | **drawPolygon** | `$drawPolygon[points_list;color;outline;fill;outline_width]` |

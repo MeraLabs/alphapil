@@ -6,8 +6,8 @@ Functions for rendering and manipulating text.
 | :--- | :--- |
 | **drawText** | `$drawText[x;y;text;color;size;font;anchor;...;max_width;truncate_width]` |
 | **text** | Alias for `$drawText` |
-| **drawTextMid** | `$drawTextMid[text;x1;x2;y1;y2;max_width;...]` |
-| **drawTextIn** | `$drawTextIn[text;x;y;w;h;max_width;...]` |
+| **drawTextMid** | `$drawTextMid[x1;y1;x2;y2;text;color;size;font;...]` |
+| **drawTextIn** | `$drawTextIn[x;y;w;h;text;color;size;font;...]` |
 | **toUpper / toLower** | `$toUpper[text]` / `$toLower[text]` |
 | **toTitle** | `$toTitle[text]` |
 | **measureText** | `$measureText[text;size;font]` |
