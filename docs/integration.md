@@ -78,6 +78,9 @@ class ImageBot(commands.Cog):
         
         # 3. Send to Discord
         await ctx.send(file=file)
+
+async def setup(bot):
+    await bot.add_cog(ImageBot(bot))
 ```
 
 !!! tip

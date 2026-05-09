@@ -92,7 +92,8 @@ $createCanvas[100;100;{myColor}]
 When using the Python API, you can pass a dictionary of variables:
 
 ```python
-engine.render(template, variables={"username": "John"})
+# Async context
+await engine.render(template, data={"username": "John"})
 ```
 
 In the template:
