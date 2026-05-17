@@ -1,37 +1,25 @@
 # What's New in AlphaPIL 🚀
 
-Welcome to the latest version of AlphaPIL! We've introduced several powerful features to help you create professional, high-quality images with ease.
+Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
-## Recent Enhancements
+## May 17, 2026
+!!! abstract "Major Feature Update: High-Res Rendering & Modern UI"
+    This update introduces the foundation for professional-grade image generation and modern UI components.
 
-| Feature | Description | Documentation |
-| :--- | :--- | :--- |
-| **💎 High-Res AA** | 4x-8x Supersampling for ultra-smooth edges on shapes and text. | [createCanvas](functions/core/createCanvas.md) |
-| **🎯 Container System** | New box-model containers for relative alignment and easier layout design. | [startContainer](functions/groups/startContainer.md) |
-| **✨ Linear Gradients** | Multi-stop linear gradients with support for custom rotation angles. | [drawLinearGradient](functions/images/drawLinearGradient.md) |
-| **🔆 Radial Gradients** | Create circular glow and lighting effects with radial color transitions. | [drawRadialGradient](functions/images/drawRadialGradient.md) |
-| **🌫️ Regional Blur** | Gaussian blur for specific regions, perfect for Glassmorphism effects. | [blur](functions/images/blur.md) |
-| **📊 Bar Charts** | Professional, themed bar charts with automatic data scaling. | [drawBarChart](functions/images/drawBarChart.md) |
-| **📉 Line Charts** | Clean line graphs for visualizing data trends with multiple themes. | [drawLineChart](functions/images/drawLineChart.md) |
-| **⏳ Progress Bars** | Modern rounded progress bars with custom colors and radius. | [drawProgressBar](functions/images/drawProgressBar.md) |
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **💎 Rendering** | **Anti-Aliasing (AA)** | 4x-8x Supersampling for ultra-smooth edges on shapes and text. | [Docs](functions/core/createCanvas.md) |
+    | **🎯 Layout** | **Container System** | Box-model containers with relative alignment (`center`, `right`, etc.). | [Docs](functions/groups/startContainer.md) |
+    | **✨ Effects** | **Linear Gradients** | Multi-stop gradients with custom rotation and AA support. | [Docs](functions/images/drawLinearGradient.md) |
+    | **🔆 Effects** | **Radial Gradients** | Circular glow and lighting effects for modern designs. | [Docs](functions/images/drawRadialGradient.md) |
+    | **🌫️ Effects** | **Regional Blur** | Gaussian blur for specific regions (Glassmorphism). | [Docs](functions/images/blur.md) |
+    | **📊 Charts** | **Bar Charts** | Themed, automatic scaling bar charts for data visualization. | [Docs](functions/images/drawBarChart.md) |
+    | **📉 Charts** | **Line Charts** | Professional line graphs with multiple color themes. | [Docs](functions/images/drawLineChart.md) |
+    | **⏳ Charts** | **Progress Bars** | Modern rounded progress bars with custom radius and styling. | [Docs](functions/images/drawProgressBar.md) |
+    | **📦 Core** | **Dependency Cleanup** | Removed `discord.py` from core for a lighter, faster package. | [GitHub](https://github.com/MeraLabs/AlphaPIL) |
 
 ---
 
-## Detailed Changes
-
-### 1. Advanced Anti-Aliasing
-You can now enable high-resolution rendering by adding an `aa` factor to `$createCanvas`. This internally renders the image at a higher scale and downsamples it for crisp edges.
-*   **Link:** [Anti-Aliasing Guide](functions/core/createCanvas.md)
-
-### 2. Smart Box Model (Containers)
-Unlike groups, containers have width and height. Keywords like `center` and `right` now work relative to the active container, allowing for truly responsive-feeling templates.
-*   **Link:** [Container System](functions/groups/startContainer.md)
-
-### 3. Data Visualization
-Introducing a full charting suite. Pass simple strings of data and labels, and AlphaPIL will handle the layout, scaling, and coloring automatically.
-*   **Link:** [Charts Overview](functions/images/drawBarChart.md)
-
-### 4. Optimized Performance
-We've removed unnecessary dependencies like `discord.py` from the core package, making AlphaPIL lighter and faster for all environments.
+*To see previous updates, check our [GitHub Release History](https://github.com/MeraLabs/AlphaPIL/releases).*
