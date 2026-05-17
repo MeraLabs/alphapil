@@ -9,10 +9,10 @@ import io
 from typing import Tuple, Union, Optional
 from PIL import Image, ImageDraw, ImageFont
 from .interpreter import CanvasInterpreter
-from .modules import AlphaMixin, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin
+from .modules import AlphaMixin, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin, EffectsMixin, ChartsMixin
 
 
-class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin):
+class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin, EffectsMixin, ChartsMixin):
     """
     High-level canvas engine that extends CanvasInterpreter with Pillow-based
     image generation capabilities and all module mixins.
@@ -28,6 +28,8 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         ImagesMixin.__init__(self)
         UtilsMixin.__init__(self)
         MaskingMixin.__init__(self)
+        EffectsMixin.__init__(self)
+        ChartsMixin.__init__(self)
         
         # Initialize mixin states
         self._init_state()
@@ -170,6 +172,16 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         self.register_function("join", self._join)
         self.register_function("split", self._split)
 
+        # Gradient & Effects functions
+        self.register_function("drawLinearGradient", self._draw_linear_gradient)
+        self.register_function("drawRadialGradient", self._draw_radial_gradient)
+        self.register_function("blur", self._blur_region)
+
+        # Chart functions from ChartsMixin
+        self.register_function("drawBarChart", self._draw_bar_chart)
+        self.register_function("drawLineChart", self._draw_line_chart)
+        self.register_function("drawProgressBar", self._draw_progress_bar)
+
         # Masking functions from MaskingMixin
         self.register_function("createLayer", self._create_layer)
         self.register_function("switchLayer", self._switch_layer)
@@ -185,26 +197,37 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         # Grouping commands
         self.register_function("startGroup", self._start_group)
         self.register_function("endGroup", self._end_group)
+        self.register_function("startContainer", self._start_container)
+        self.register_function("endContainer", self._end_container)
     
-    def _create_canvas(self, width: str, height: str, color: str = "white") -> str:
+    def _create_canvas(self, width: str, height: str, color: str = "white", aa: str = "1") -> str:
         """
-        Create a new canvas with specified dimensions and background color.
+        Create a new canvas with optional Anti-Aliasing (aa).
         """
         try:
-            w = int(self._parse_num(width))
-            h = int(self._parse_num(height))
-            self.canvas_size = (w, h)
+            # Parse base dimensions
+            base_w = int(self._parse_num(width))
+            base_h = int(self._parse_num(height))
+            aa_factor = int(self._parse_num(aa))
             
-            # Parse color using the helper from AlphaMixin
+            # Set state
+            self._set_state('aa', aa_factor)
+            
+            # Internal dimensions (Upscaled)
+            w = base_w * aa_factor
+            h = base_h * aa_factor
+            
+            self.canvas_size = (base_w, base_h) # Store logical size
+            
+            # Parse color
             bg_color = self._get_color(color) or (255, 255, 255, 255)
             
-            # Use RGBA for all canvases to support transparency and consistent blending
             self.canvas = Image.new("RGBA", (w, h), bg_color)
             self.draw = ImageDraw.Draw(self.canvas)
             
-            return f"Canvas created: {w}x{h}"
+            return f"Canvas created: {base_w}x{base_h}" + (f" with AA={aa_factor}" if aa_factor > 1 else "")
         except ValueError as e:
-            raise ValueError(f"{e}\nProper Syntax: $createCanvas[width;height;color]")
+            raise ValueError(f"{e}\nProper Syntax: $createCanvas[width;height;color;aa]")
     
     def _set_var(self, name: str, value: str) -> str:
         """
@@ -225,30 +248,44 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
     
     def _save_canvas(self, filename: str = "output.png") -> str:
         """
-        Save the current canvas to a file with maximum quality.
+        Save the current canvas with Lanczos downscaling if AA is enabled.
         """
         if not self.canvas:
             raise RuntimeError("No canvas to save. Call $createCanvas first.")
         
         try:
+            img = self.canvas
+            aa_factor = self._get_aa()
+            
+            # Downscale if AA was used
+            if aa_factor > 1:
+                img = img.resize(self.canvas_size, Image.Resampling.LANCZOS)
+                
             # Set high quality parameters for various formats
             save_params = {"optimize": True}
             if filename.lower().endswith(('.jpg', '.jpeg')):
                 save_params.update({"quality": 100, "subsampling": 0})
             
-            self.canvas.save(filename, **save_params)
+            img.save(filename, **save_params)
             return f"Canvas saved as {filename}"
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $save[filename]")
     
     def get_canvas_bytes(self, format: str = "PNG") -> bytes:
         """
-        Get the canvas as bytes with maximum quality.
+        Get the canvas bytes with Lanczos downscaling if AA is enabled.
         """
         if not self.canvas:
             raise RuntimeError("No canvas available. Call $createCanvas first.")
         
         try:
+            img = self.canvas
+            aa_factor = self._get_aa()
+            
+            # Downscale if AA was used
+            if aa_factor > 1:
+                img = img.resize(self.canvas_size, Image.Resampling.LANCZOS)
+                
             img_bytes = io.BytesIO()
             
             # Set high quality parameters
@@ -256,7 +293,7 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
             if format.upper() in ["JPEG", "JPG"]:
                 save_params.update({"quality": 100, "subsampling": 0})
                 
-            self.canvas.save(img_bytes, **save_params)
+            img.save(img_bytes, **save_params)
             img_bytes.seek(0)
             return img_bytes.getvalue()
         except Exception as e:

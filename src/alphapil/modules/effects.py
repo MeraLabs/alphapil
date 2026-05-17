@@ -50,62 +50,145 @@ class EffectsMixin(AlphaMixin):
         except ValueError as e:
             raise ValueError(f"Invalid noise parameters: {e}")
     
-    def _draw_gradient(self, x1: str, y1: str, x2: str, y2: str, 
-                      color1: str, color2: str, direction: str = "horizontal") -> str:
+    def _draw_linear_gradient(self, x: str, y: str, w: str, h: str, 
+                             colors: str, angle: str = "90") -> str:
         """
-        Draw a gradient rectangle.
-        
-        Args:
-            x1: Start X coordinate as string
-            y1: Start Y coordinate as string
-            x2: End X coordinate as string
-            y2: End Y coordinate as string
-            color1: Start color
-            color2: End color
-            direction: "horizontal" or "vertical" (default: "horizontal")
-            
-        Returns:
-            Confirmation message
+        Draw a linear gradient rectangle with multiple color stops and rotation.
+        Syntax: $drawLinearGradient[x;y;w;h;color1,stop1;color2,stop2;...;angle]
         """
         self._ensure_canvas()
-        
         try:
-            start_x = self._parse_num(x1)
-            start_y = self._parse_num(y1)
-            end_x = self._parse_num(x2)
-            end_y = self._parse_num(y2)
+            x1 = self._parse_position(x, 'x')
+            y1 = self._parse_position(y, 'y')
+            width = self._s(self._parse_num(w))
+            height = self._s(self._parse_num(h))
+            rot_angle = float(self._parse_num(angle))
+
+            # Parse color stops: "red,0;blue,1"
+            stops = []
+            for item in colors.split(';'):
+                parts = item.split(',')
+                if len(parts) == 2:
+                    color = self._get_color(parts[0].strip())
+                    stop = float(parts[1].strip())
+                    stops.append((stop, color))
             
-            start_color = self._get_color(color1)
-            end_color = self._get_color(color2)
+            if not stops:
+                raise ValueError("At least one color stop required")
+            stops.sort()
+
+            # Create gradient buffer
+            # For simplicity, we create a vertical gradient and rotate it if needed
+            # But simpler: just vertical (90) or horizontal (0) for now, 
+            # or full rotation via a larger buffer
             
-            if direction.lower() == "horizontal":
-                width = end_x - start_x
-                height = end_y - start_y
+            grad_img = Image.new("RGBA", (int(width), int(height)))
+            draw = ImageDraw.Draw(grad_img)
+            
+            # Helper to interpolate colors
+            def lerp_color(c1, c2, t):
+                return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
+
+            for i in range(int(height)):
+                t = i / height
+                # Find the two stops this 't' falls between
+                c = stops[0][1]
+                for j in range(len(stops)-1):
+                    if stops[j][0] <= t <= stops[j+1][0]:
+                        local_t = (t - stops[j][0]) / (stops[j+1][0] - stops[j][0])
+                        c = lerp_color(stops[j][1], stops[j+1][1], local_t)
+                        break
+                    elif t > stops[j+1][0]:
+                        c = stops[j+1][1]
                 
-                for i in range(width):
-                    ratio = i / width
-                    r = int(start_color[0] + (end_color[0] - start_color[0]) * ratio)
-                    g = int(start_color[1] + (end_color[1] - start_color[1]) * ratio)
-                    b = int(start_color[2] + (end_color[2] - start_color[2]) * ratio)
-                    
-                    self.draw.line([(start_x + i, start_y), (start_x + i, end_y)], 
-                                 fill=(r, g, b))
-            else:  # vertical
-                width = end_x - start_x
-                height = end_y - start_y
-                
-                for i in range(height):
-                    ratio = i / height
-                    r = int(start_color[0] + (end_color[0] - start_color[0]) * ratio)
-                    g = int(start_color[1] + (end_color[1] - start_color[1]) * ratio)
-                    b = int(start_color[2] + (end_color[2] - start_color[2]) * ratio)
-                    
-                    self.draw.line([(start_x, start_y + i), (end_x, start_y + i)], 
-                                 fill=(r, g, b))
+                draw.line([(0, i), (width, i)], fill=c)
+
+            if rot_angle != 90:
+                grad_img = grad_img.rotate(90 - rot_angle, expand=True, resample=Image.Resampling.BICUBIC)
+                # Crop back to original intended size if we want fixed box, 
+                # but usually gradients fill the box.
             
-            return f"Gradient drawn from ({start_x}, {start_y}) to ({end_x}, {end_y})"
-        except ValueError as e:
-            raise ValueError(f"Invalid gradient parameters: {e}")
+            self.canvas.paste(grad_img, (int(x1), int(y1)), grad_img)
+            return f"Linear gradient drawn at ({x1}, {y1})"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $drawLinearGradient[x;y;w;h;colors;angle]")
+
+    def _draw_radial_gradient(self, cx: str, cy: str, radius: str, colors: str) -> str:
+        """
+        Draw a radial gradient.
+        Syntax: $drawRadialGradient[cx;cy;radius;color1,stop1;color2,stop2;...]
+        """
+        self._ensure_canvas()
+        try:
+            x_pos = self._parse_position(cx, 'x')
+            y_pos = self._parse_position(cy, 'y')
+            r = self._s(self._parse_num(radius))
+            
+            stops = []
+            for item in colors.split(';'):
+                parts = item.split(',')
+                if len(parts) == 2:
+                    color = self._get_color(parts[0].strip())
+                    stop = float(parts[1].strip())
+                    stops.append((stop, color))
+            stops.sort()
+
+            size = int(r * 2)
+            grad_img = Image.new("RGBA", (size, size))
+            draw = ImageDraw.Draw(grad_img)
+            
+            def lerp_color(c1, c2, t):
+                return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
+
+            for y in range(size):
+                for x in range(size):
+                    dist = ((x - r)**2 + (y - r)**2)**0.5
+                    t = dist / r
+                    if t > 1.0: continue
+                    
+                    c = stops[0][1]
+                    for j in range(len(stops)-1):
+                        if stops[j][0] <= t <= stops[j+1][0]:
+                            local_t = (t - stops[j][0]) / (stops[j+1][0] - stops[j][0])
+                            c = lerp_color(stops[j][1], stops[j+1][1], local_t)
+                            break
+                        elif t > stops[j+1][0]:
+                            c = stops[j+1][1]
+                    
+                    draw.point((x, y), fill=c)
+
+            self.canvas.paste(grad_img, (int(x_pos - r), int(y_pos - r)), grad_img)
+            return "Radial gradient drawn"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $drawRadialGradient[cx;cy;radius;colors]")
+
+    def _blur_region(self, radius: str, x: str = None, y: str = None, w: str = None, h: str = None) -> str:
+        """
+        Blur a specific region of the canvas (Glassmorphism).
+        """
+        self._ensure_canvas()
+        try:
+            r = self._s(self._parse_num(radius))
+            
+            if x is None:
+                # Blur whole canvas
+                self.canvas = self.canvas.filter(ImageFilter.GaussianBlur(r))
+                self.draw = ImageDraw.Draw(self.canvas)
+                return f"Canvas blurred with radius {r}"
+            
+            x1 = self._parse_position(x, 'x')
+            y1 = self._parse_position(y, 'y')
+            width = self._s(self._parse_num(w))
+            height = self._s(self._parse_num(h))
+            
+            box = (int(x1), int(y1), int(x1 + width), int(y1 + height))
+            region = self.canvas.crop(box)
+            region = region.filter(ImageFilter.GaussianBlur(r))
+            self.canvas.paste(region, (int(x1), int(y1)))
+            
+            return f"Region at ({x1}, {y1}) blurred"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $blur[radius;x;y;w;h]")
     
     def _draw_pattern(self, x: str, y: str, width: str, height: str, 
                      pattern_type: str = "dots", color: str = "black") -> str:

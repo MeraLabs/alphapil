@@ -56,8 +56,8 @@ class ImagesMixin:
             img = await self._load_image_async(image_path)
             
             # 3. Resize logic
-            target_w = int(self._parse_num(width)) if width else None
-            target_h = int(self._parse_num(height)) if height else None
+            target_w = int(self._s(self._parse_num(width))) if width else None
+            target_h = int(self._s(self._parse_num(height))) if height else None
             
             if target_w and target_h:
                 img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
@@ -71,7 +71,7 @@ class ImagesMixin:
                 img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
             
             w, h = img.size
-            radius_val = int(self._parse_num(radius)) if radius else 0
+            radius_val = int(self._s(self._parse_num(radius))) if radius else 0
             
             # 4. Apply Anchor Offset
             ax, ay = self._get_anchor_offset(final_anchor, w, h)

@@ -22,9 +22,19 @@ class AlphaMixin:
             'font_size': 12,
             'color': 'black',
             'stroke_width': 1,
-            'stroke_color': 'black'
+            'stroke_color': 'black',
+            'aa': 1
         }
         self._group_stack = [] # Stack of (x, y) offsets
+        self._container_stack = [] # Stack of (x, y, w, h)
+
+    def _get_aa(self) -> int:
+        """Get the current anti-aliasing factor."""
+        return int(self._get_state('aa', 1))
+
+    def _s(self, value: Union[int, float]) -> Union[int, float]:
+        """Scale a value by the anti-aliasing factor."""
+        return value * self._get_aa()
 
     def _get_state(self, key: str, default=None):
         """Get state value with fallback"""
@@ -39,33 +49,57 @@ class AlphaMixin:
         self._state[key] = value
 
     # -------------------------
-    # Grouping Logic
+    # Grouping & Container Logic
     # -------------------------
 
     def _get_group_offset(self) -> Tuple[float, float]:
         """Calculate total offset from all active groups."""
         if hasattr(self, '_group_stack') and self._group_stack:
-            # Absolute origin: only the top of the stack matters
             return self._group_stack[-1]
         return 0.0, 0.0
 
+    def _get_container(self) -> Optional[Tuple[float, float, float, float]]:
+        """Get the current active container (x, y, w, h)."""
+        if hasattr(self, '_container_stack') and self._container_stack:
+            return self._container_stack[-1]
+        return None
+
     def _start_group(self, x: str = "0", y: str = "0") -> str:
         """
-        Start a new coordinate group with an absolute origin relative to the canvas.
-        Ignores previous group offsets.
+        Start a new coordinate group. Numbers are scaled by AA.
         """
         if not hasattr(self, '_group_stack'):
             self._group_stack = []
         
         try:
-            # Parse x, y as absolute (ignore current stack)
             ox = self._parse_position(x, 'x', ignore_stack=True)
             oy = self._parse_position(y, 'y', ignore_stack=True)
             
             self._group_stack.append((ox, oy))
-            return f"Group started at absolute origin ({ox}, {oy})"
+            return f"Group started at ({ox}, {oy})"
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $startGroup[x;y]")
+
+    def _start_container(self, x: str = "0", y: str = "0", w: str = "0", h: str = "0") -> str:
+        """
+        Start a new container box. Keywords like 'center' inside this box 
+        will resolve relative to its boundaries.
+        """
+        if not hasattr(self, '_container_stack'):
+            self._container_stack = []
+            
+        try:
+            # Parse x, y as absolute positions
+            cx = self._parse_position(x, 'x')
+            cy = self._parse_position(y, 'y')
+            # Width and height are scaled lengths
+            cw = self._s(self._parse_num(w))
+            ch = self._s(self._parse_num(h))
+            
+            self._container_stack.append((cx, cy, cw, ch))
+            return f"Container started at ({cx}, {cy}) size {cw}x{ch}"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $startContainer[x;y;w;h]")
 
     def _end_group(self) -> str:
         """End the current coordinate group."""
@@ -73,6 +107,13 @@ class AlphaMixin:
             self._group_stack.pop()
             return "Group ended"
         return "No active group to end"
+
+    def _end_container(self) -> str:
+        """End the current container."""
+        if hasattr(self, '_container_stack') and self._container_stack:
+            self._container_stack.pop()
+            return "Container ended"
+        return "No active container to end"
 
     # -------------------------
     # State Management Commands
@@ -192,55 +233,57 @@ class AlphaMixin:
 
     def _parse_position(self, pos_str: str, axis: str, ignore_stack: bool = False) -> float:
         """
-        Parse position string with support for coordinate stacking and keywords.
-        Keywords (center, right, etc.) are absolute to the canvas.
-        Numbers are relative to the current group offset.
+        Parse position string with support for containers, coordinate stacking and keywords.
         """
         self._ensure_canvas()
-        canvas_size = self.canvas.width if axis == 'x' else self.canvas.height
         
-        # Current group offset
+        # 0. Get Context (Container or Canvas)
+        container = self._get_container()
+        if container:
+            cx, cy, cw, ch = container
+            context_start = cx if axis == 'x' else cy
+            context_size = cw if axis == 'x' else ch
+        else:
+            context_start = 0.0
+            context_size = self.canvas.width if axis == 'x' else self.canvas.height
+        
+        # Current group offset (relative to canvas, already scaled)
         group_x, group_y = (0.0, 0.0) if ignore_stack else self._get_group_offset()
         base_offset = group_x if axis == 'x' else group_y
 
         pos_str = str(pos_str).strip().lower()
         
-        # 1. Handle simple keywords (Absolute)
-        if pos_str == 'center' or pos_str == 'middle':
-            return float(canvas_size / 2)
+        # 1. Handle simple keywords
+        if pos_str in ('center', 'middle'):
+            return context_start + (context_size / 2)
         
         if axis == 'x':
-            if pos_str == 'left': return 0.0
-            if pos_str == 'right': return float(canvas_size)
+            if pos_str == 'left': return context_start
+            if pos_str == 'right': return context_start + context_size
         else:
-            if pos_str == 'top': return 0.0
-            if pos_str == 'bottom': return float(canvas_size)
+            if pos_str == 'top': return context_start
+            if pos_str == 'bottom': return context_start + context_size
             
         # 2. Handle mid(a, b) / between(a, b) (Recursive)
         match_mid = re.match(r'^(?:mid|between)\(([^,;]+)[,;]([^,;]+)\)$', pos_str)
         if match_mid:
             p1_str, p2_str = match_mid.groups()
-            # Resolve parts with current stack (they might be keywords or relative numbers)
             p1 = self._parse_position(p1_str, axis, ignore_stack=ignore_stack)
             p2 = self._parse_position(p2_str, axis, ignore_stack=ignore_stack)
             return (p1 + p2) / 2
 
-        # 3. Parse logic for offsets (+/-) (Recursive)
-        # Supports: right-40, center+10, 100-20, etc.
+        # 3. Parse logic for offsets (+/-)
         match = re.match(r'^([a-z0-9.%]+)\s*([+\-])\s*([0-9.]+)$', pos_str)
         if match:
             base_str, op, off_str = match.groups()
-            # Resolve base part (could be keyword or number)
             base_val = self._parse_position(base_str, axis, ignore_stack=ignore_stack)
-            offset = float(off_str)
+            offset = self._s(float(off_str))
             return base_val + offset if op == '+' else base_val - offset
         
         # 4. Fallback to simple number parsing (Relative to group)
         try:
-            return self._parse_num(pos_str) + base_offset
+            return self._s(self._parse_num(pos_str)) + base_offset
         except ValueError:
-            # If not a number, maybe it's an unrecognized keyword?
-            # Return 0 or raise error? For now, re-raise original error
             raise ValueError(f"Invalid position: {pos_str}")
 
     def _check_bounds(self, x: float, y: float, 

@@ -57,15 +57,8 @@ class TextMixin:
     def _get_font(self, size: Union[str, int], font_path: str = None) -> ImageFont.ImageFont:
         """
         Get a font object for text rendering.
-        
-        Args:
-            size: Font size as string or integer
-            font_path: Path to font file or alias
-            
-        Returns:
-            PIL ImageFont object
         """
-        font_size = int(size) if isinstance(size, str) else size
+        font_size = int(self._s(self._parse_num(size)))
         
         # Check if font_path is a cached alias (Remote Font)
         if font_path and hasattr(self, '_font_cache') and font_path in self._font_cache:
@@ -134,9 +127,9 @@ class TextMixin:
             
             # Stroke defaults
             if stroke_width is None:
-                sw = int(self._get_state('stroke_width', 0))
+                sw = int(self._s(self._get_state('stroke_width', 0)))
             else:
-                sw = int(self._parse_num(stroke_width))
+                sw = int(self._s(self._parse_num(stroke_width)))
                 
             if stroke_fill:
                 stroke_color = self._get_color(stroke_fill)
@@ -145,17 +138,19 @@ class TextMixin:
 
             # 0. Apply Truncation and Wrapping first
             if truncate_width:
-                text = self._truncate_text(text, truncate_width, size, font)
+                tw_val = self._s(self._parse_num(truncate_width))
+                text = self._truncate_text(text, str(tw_val), size, font, is_scaled=True)
             if max_width:
-                text = self._wrap_text(text, max_width, size, font)
+                mw_val = self._s(self._parse_num(max_width))
+                text = self._wrap_text(text, str(mw_val), size, font, is_scaled=True)
 
             x_pos = self._parse_position(x, 'x')
             y_pos = self._parse_position(y, 'y')
-            font_size = self._parse_num(size)
-            gr = int(self._parse_num(glow_radius))
+            # Font size is already scaled inside _get_font
+            gr = int(self._s(self._parse_num(glow_radius)))
             
             text_color = self._get_color(color)
-            font_obj = self._get_font(font_size, font)
+            font_obj = self._get_font(size, font)
             
             # 1. Apply Glow Effect
             if glow_color and gr > 0:
@@ -170,7 +165,8 @@ class TextMixin:
             # 2. Apply Shadow Effect
             if shadow_color:
                 sc = self._get_color(shadow_color)
-                sx, sy = self._parse_coords(shadow_offset)
+                raw_sx, raw_sy = self._parse_coords(shadow_offset)
+                sx, sy = self._s(raw_sx), self._s(raw_sy)
                 self.draw.text((x_pos + sx, y_pos + sy), text, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=anchor)
 
             # 3. Handle Gradient
@@ -240,38 +236,27 @@ class TextMixin:
     
     def _measure_text(self, text: str, size: str = "12", font: str = None) -> str:
         """
-        Measure text dimensions.
-        
-        Args:
-            text: Text to measure
-            size: Font size as string (default: "12")
-            font: Font file path (optional)
-            
-        Returns:
-            String with width and height in format "width,height"
+        Measure text dimensions. Returns logical size (unscaled).
         """
         try:
-            font_size = self._parse_num(size)
-            font_obj = self._get_font(font_size, font)
-            
-            # Get text bounding box
+            font_obj = self._get_font(size, font)
             bbox = self.draw.textbbox((0, 0), text, font=font_obj)
-            width = bbox[2] - bbox[0]
-            height = bbox[3] - bbox[1]
+            
+            # Width and height are scaled values from bbox
+            width = (bbox[2] - bbox[0]) / self._get_aa()
+            height = (bbox[3] - bbox[1]) / self._get_aa()
             
             return f"{width},{height}"
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $measureText[text;size;font]")
     
-    def _wrap_text(self, text: str, max_width: str, size: str = "12", font: str = None) -> str:
+    def _wrap_text(self, text: str, max_width: str, size: str = "12", font: str = None, is_scaled: bool = False) -> str:
         """
         Wrap text to fit within a maximum width.
-        Supports wrapping long words that exceed max_width.
         """
         try:
-            max_w = self._parse_num(max_width)
-            font_size = self._parse_num(size)
-            font_obj = self._get_font(font_size, font)
+            max_w = float(max_width) if is_scaled else self._s(self._parse_num(max_width))
+            font_obj = self._get_font(size, font)
             
             lines = []
             paragraphs = text.split('\n')
@@ -325,15 +310,15 @@ class TextMixin:
     def _auto_size_text(self, text: str, max_width: str, start_size: str = "30", 
                         min_size: str = "10", font: str = None) -> str:
         """
-        Calculates the best font size (decreasing from start_size) to fit text 
-        within max_width. Returns the resulting size.
+        Calculates the best font size to fit text within max_width.
         """
         try:
-            max_w = self._parse_num(max_width)
+            max_w = self._s(self._parse_num(max_width))
             current_size = int(self._parse_num(start_size))
             m_size = int(self._parse_num(min_size))
             
             while current_size >= m_size:
+                # _get_font will handle scaling for internal check
                 font_obj = self._get_font(current_size, font)
                 bbox = self.draw.textbbox((0, 0), text, font=font_obj)
                 if (bbox[2] - bbox[0]) <= max_w:
@@ -344,14 +329,13 @@ class TextMixin:
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $autoSizeText[text;max_width;start_size;min_size;font]")
 
-    def _truncate_text(self, text: str, max_width: str, size: str = "12", font: str = None, suffix: str = "...") -> str:
+    def _truncate_text(self, text: str, max_width: str, size: str = "12", font: str = None, suffix: str = "...", is_scaled: bool = False) -> str:
         """
         Truncate text to fit within a maximum width.
         """
         try:
-            max_w = self._parse_num(max_width)
-            font_size = self._parse_num(size)
-            font_obj = self._get_font(font_size, font)
+            max_w = float(max_width) if is_scaled else self._s(self._parse_num(max_width))
+            font_obj = self._get_font(size, font)
             
             bbox = self.draw.textbbox((0, 0), text, font=font_obj)
             if (bbox[2] - bbox[0]) <= max_w:

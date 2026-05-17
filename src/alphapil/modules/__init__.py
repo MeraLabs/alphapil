@@ -11,5 +11,7 @@ from .text import TextMixin
 from .images import ImagesMixin
 from .utils import UtilsMixin
 from .masking import MaskingMixin
+from .effects import EffectsMixin
+from .charts import ChartsMixin
 
-__all__ = ["AlphaMixin", "ShapesMixin", "TextMixin", "ImagesMixin", "UtilsMixin", "MaskingMixin"]
+__all__ = ["AlphaMixin", "ShapesMixin", "TextMixin", "ImagesMixin", "UtilsMixin", "MaskingMixin", "EffectsMixin", "ChartsMixin"]

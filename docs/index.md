@@ -11,6 +11,19 @@
 - 🔧 **Extensible** - Easily add new functions and filters.
 - 🏆 **Bot Ready** - Perfect for Discord bots, automated reports, and social media cards.
 
+## What's New 🚀
+
+AlphaPIL has been upgraded with modern rendering and layout features!
+
+| Feature | Description | Documentation |
+| :--- | :--- | :--- |
+| **Anti-Aliasing (AA)** | 4x-8x Supersampling for ultra-smooth edges. | [createCanvas](functions/core/createCanvas.md) |
+| **Container System** | Local alignment boxes for easier layouts. | [startContainer](functions/groups/startContainer.md) |
+| **Linear Gradients** | Multi-stop gradients with custom rotation. | [drawLinearGradient](functions/images/drawLinearGradient.md) |
+| **Radial Gradients** | Circular glow and lighting effects. | [drawRadialGradient](functions/images/drawRadialGradient.md) |
+| **Regional Blur** | Glassmorphism and frosting effects. | [blur](functions/images/blur.md) |
+| **Modern Charts** | Themed Bar, Line, and Progress charts. | [drawBarChart](functions/images/drawBarChart.md) |
+
 ## Quick Example
 
 ```bash
