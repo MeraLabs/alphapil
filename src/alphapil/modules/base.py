@@ -6,7 +6,7 @@ used across different functional modules.
 """
 
 import re
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional, List
 from PIL import ImageColor
 
 

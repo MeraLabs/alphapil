@@ -20,7 +20,20 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
     | **⏳ Charts** | **Progress Bars** | Modern rounded progress bars with custom radius and styling. | [Docs](functions/images/drawProgressBar.md) |
     | **🛠️ Dev** | **Custom Macros** | Define your own functions with `$function` for reusable UI components. | [Docs](functions/utils/function.md) |
     | **🛡️ Safety** | **Strict Mode** | Toggle `strict=false` to prevent errors from crashing the renderer. | [Docs](functions/core/createCanvas.md) |
+    | **🔤 Fonts** | **Auto-Discovery** | Use any system font (Arial, Impact, etc.) by name via `$getSystemFonts`. | [Docs](functions/core/getSystemFonts.md) |
     | **📦 Core** | **Dependency Cleanup** | Removed `discord.py` from core for a lighter, faster package. | [GitHub](https://github.com/MeraLabs/AlphaPIL) |
+
+---
+
+## May 17, 2026 (v0.2.1)
+!!! abstract "Patch Update: Bug Fixes & Variable Support"
+    This patch fixes critical import issues and improves variable handling for AI agents.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🐛 Fix** | **Import Error** | Fixed `NameError` related to `Optional` and `Tuple` in core modules. | [GitHub](https://github.com/MeraLabs/AlphaPIL) |
+    | **📥 Variable** | **$getVar** | Added explicit `$getVar` function to complement `{var}` syntax. | [Docs](functions/core/getVar.md) |
+    | **🤖 AI** | **Manifest v0.2.1** | Updated technical manifest with $getVar and better positioning logic. | [Manifest](ALPHAPIL_MANIFEST.txt) |
 
 ---
 

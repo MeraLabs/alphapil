@@ -7,33 +7,26 @@ performing text transformations like case conversion.
 
 import io
 import aiohttp
-from typing import Union, Dict, Optional
+import os
+import platform
+from typing import Union, Dict, Optional, List
 from PIL import ImageDraw, ImageFont, ImageFilter, Image
 
 
 class TextMixin:
     """
     Mixin class providing text rendering and manipulation functionality.
-    
-    This mixin adds methods for drawing text, measuring text dimensions,
-    and performing text transformations.
     """
     
     def _init_text(self):
         """Initialize text state."""
         self._font_aliases: Dict[str, str] = {}
         self._font_cache: Dict[str, bytes] = {}
-        
+        self._system_fonts: Dict[str, str] = {} # Name -> Path cache
+
     async def _load_font(self, path: str, alias: str) -> str:
         """
         Register a font file path or URL to an alias.
-        
-        Args:
-            path: Path to .ttf/.otf file or a direct URL
-            alias: Shorthand name to use later
-            
-        Returns:
-            Confirmation message
         """
         if not hasattr(self, '_font_aliases'):
             self._init_text()
@@ -54,42 +47,83 @@ class TextMixin:
             self._font_aliases[alias] = path
             return f"Local font alias '{alias}' registered for {path}"
 
+    def _discover_system_fonts(self) -> None:
+        """Scan system directories for fonts once and cache their paths."""
+        if hasattr(self, '_system_fonts') and self._system_fonts:
+            return
+
+        self._system_fonts = {}
+        system = platform.system()
+        paths = []
+
+        if system == "Windows":
+            paths = [os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'Fonts')]
+        elif system == "Darwin": # macOS
+            paths = ['/Library/Fonts', '/System/Library/Fonts', os.path.expanduser('~/Library/Fonts')]
+        else: # Linux
+            paths = ['/usr/share/fonts', '/usr/local/share/fonts', os.path.expanduser('~/.fonts'), os.path.expanduser('~/.local/share/fonts')]
+
+        for p in paths:
+            if not os.path.exists(p): continue
+            for root, _, files in os.walk(p):
+                for f in files:
+                    if f.lower().endswith(('.ttf', '.otf')):
+                        # Store both "Arial" and "Arial.ttf" as keys
+                        name = os.path.splitext(f)[0].lower()
+                        full_path = os.path.join(root, f)
+                        self._system_fonts[name] = full_path
+                        self._system_fonts[f.lower()] = full_path
+
+    def _get_system_fonts(self) -> str:
+        """Return a semicolon-separated list of all discovered system font names."""
+        self._discover_system_fonts()
+        # Filter out the .ttf entries to just show clean names
+        names = sorted(list(set([k for k in self._system_fonts.keys() if not k.endswith(('.ttf', '.otf'))])))
+        return "; ".join(names)
+
     def _get_font(self, size: Union[str, int], font_path: str = None) -> ImageFont.ImageFont:
         """
-        Get a font object for text rendering.
+        Get a font object. Supports aliases, system names, and direct paths.
         """
         font_size = int(self._s(self._parse_num(size)))
         
-        # Check if font_path is a cached alias (Remote Font)
+        # 1. Check cached Remote Font aliases
         if font_path and hasattr(self, '_font_cache') and font_path in self._font_cache:
             return ImageFont.truetype(io.BytesIO(self._font_cache[font_path]), font_size)
 
-        # Check if font_path is a registered alias (Local Path)
+        # 2. Check registered Local aliases
         if font_path and hasattr(self, '_font_aliases') and font_path in self._font_aliases:
             font_path = self._font_aliases[font_path]
 
         if font_path:
+            # 3. Try as direct path
             try:
-                # Check if path itself is a URL but wasn't pre-loaded (not recommended but handled)
-                if font_path.startswith(('http://', 'https://')):
-                    # We can't easily sync download here without blocking, 
-                    # so we fallback to default if not pre-loaded via $loadFont
-                    pass
-                else:
-                    return ImageFont.truetype(font_path, font_size)
-            except:
-                pass  # Fall back to default font
+                if not font_path.startswith(('http://', 'https://')):
+                    if os.path.exists(font_path):
+                        return ImageFont.truetype(font_path, font_size)
+            except: pass
+
+            # 4. Try as system font name (Auto-Discovery)
+            self._discover_system_fonts()
+            name_lower = font_path.lower()
+            if name_lower in self._system_fonts:
+                try:
+                    return ImageFont.truetype(self._system_fonts[name_lower], font_size)
+                except: pass
+
+            # 5. Try Pillow's internal search for standard names
+            try:
+                return ImageFont.truetype(font_path, font_size)
+            except: pass
         
-        # Try common system fonts
+        # 6. Fallback to common fonts
         common_fonts = ["arial.ttf", "arialbd.ttf", "times.ttf", "cour.ttf", "DejaVuSans.ttf"]
-        
         for font_name in common_fonts:
             try:
                 return ImageFont.truetype(font_name, font_size)
-            except:
-                continue
+            except: continue
         
-        # Fall back to default font
+        # 7. Ultimate Fallback
         return ImageFont.load_default()
     
     def _draw_text(self, x: str, y: str, text: str, color: str = None, 

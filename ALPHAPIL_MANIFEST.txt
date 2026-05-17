@@ -1,0 +1,87 @@
+ALPHAPIL TECHNICAL MANIFEST (V0.2.1)
+====================================
+Guide for AI Agents to write professional AlphaPIL templates.
+
+1. CORE ENGINE ARCHITECTURE
+---------------------------
+- PARSING: Recursive, inside-out. Nested functions resolve FIRST.
+- AA (Anti-Aliasing): 1 (Off) to 8 (High). Internally renders at (Scale * AA) and downsamples with Lanczos.
+- BOX MODEL: $startContainer[x;y;w;h] defines a local context.
+- AUTO-FONT: Automatically discovers fonts on the user's device (Win/Mac/Linux) by name.
+- ERROR HANDLING: `strict=false` captures errors in $getErrors[] without crashing.
+
+2. COORDINATE MASTERY (The Positioning Language)
+-----------------------------------------------
+AlphaPIL uses a smart coordinate parser. You can use these anywhere X or Y is required:
+- KEYWORDS: left, right, top, bottom, center, middle (Context-aware: Canvas or Container).
+- MATH OFFSETS: center+20, right-50, 100+10%.
+- MIDPOINT: mid(p1,p2) or between(p1,p2). e.g., $drawText[mid(left,center);...]
+- PERCENTAGES: 50%, 100%. Relative to the current context (Canvas or Container).
+
+3. ARGUMENT CONVENTIONS
+-----------------------
+- UNNAMED (Traditional): $drawRect[10;10;100;100;red]
+- NAMED (Clean): $drawRect[x=10;y=10;w=100;h=100;color=red]
+- MIXED: $drawRect[10;10;w=100;h=100;color=red] (AI should prefer NAMED for readability).
+
+4. FUNCTION REFERENCE
+---------------------
+(Syntax: $func[param1;param2;...])
+
+--- CORE ---
+$createCanvas[width;height;color;aa;strict]
+$save[filename] | $setVar[name;value] | $getVar[name;default] | $setFont[name_or_alias;size]
+$loadFont[url;alias] | $getSystemFonts[]
+$setColor[color] | $setStroke[width;color] | $getBytes[format] | $getErrors[]
+
+--- SHAPES ---
+$drawRect[x;y;w;h;color;outline;fill;lw;radius;anchor]
+$drawCircle[cx;cy;radius;color;outline;fill;lw;anchor]
+$drawRoundedRect[x;y;w;h;radius;color;outline;fill;lw;anchor]
+$drawLine[x1;y1;x2;y2;color;width]
+$drawPolygon[points;color;outline;fill;lw] (points: x1,y1,x2,y2)
+$drawStar[x;y;points;outer_r;inner_r;color;outline;fill;lw]
+$drawArc[x;y;w;h;start;end;color;width]
+
+--- TEXT ---
+$drawText[x;y;text;color;size;font;anchor;sw;sf;shadow_c;shadow_off;glow_c;glow_r;max_w;trunc_w;grad]
+$drawTextMid[x1;y1;x2;y2;text;...] (Centers text between two points)
+$drawTextIn[x;y;w;h;text;...] (Centers text inside a box)
+$measureText[text;size;font] | $wrapText[text;width;size;font] | $autoSizeText[text;max_w;start_s;min_s;font]
+
+--- IMAGES & EFFECTS ---
+$drawImage[x;y;path;w;h;opacity;radius;circle;anchor]
+$drawLinearGradient[x;y;w;h;stops;angle] (stops: "color,0;color,1")
+$drawRadialGradient[cx;cy;r;stops]
+$blur[radius;x;y;w;h] (Region blur for Glassmorphism)
+$imageFilter[filter_name] (blur, contour, sharpen, etc)
+
+--- DATA VISUALIZATION ---
+$drawBarChart[x;y;w;h;vals;labels;theme;color;gap;show_lab;font;size]
+$drawLineChart[x;y;w;h;vals;labels;theme;color;lw;points;font;size]
+$drawProgressBar[x;y;w;h;val;max;theme;color;bg;radius]
+(Themes: modern, vibrant, pastel, ocean, forest, sunset, cyberpunk, dark_gold, slate, neon)
+
+--- LOGIC & UTILS ---
+$if[condition;true;false] | $math[expr] | $random[min;max]
+$function[name;args;body] (Custom macros: {arg1})
+$substring[text;start;end] | $replace[text;old;new]
+
+5. PROFESSIONAL BEST PRACTICES
+------------------------------
+1. GLASSMORPHISM: Draw an image/gradient -> $blur[15;x;y;w;h] -> $drawRect[x;y;w;h;fill=white,30]
+2. RESPONSIVE: Use $startContainer[x;y;w;h] and then 'center' for all elements inside.
+3. TEXT HIERARCHY: Use $setFont for headers and $setFont for body to keep code clean.
+4. AA: Always use $createCanvas[...;aa=4] for production-quality final exports.
+
+6. REFERENCE TEMPLATE (The "Professional" Way)
+---------------------------------------------
+$createCanvas[800;600;black;aa=4;strict=false]
+$drawLinearGradient[0;0;100%;100%;#1a1a1a,0;#000000,1;90]
+$startContainer[center;middle;600;400]
+    $drawRoundedRect[0;0;100%;100%;20;fill=#ffffff,10;outline=white,20;lw=1]
+    $blur[20;0;0;100%;100%]
+    $drawText[center;40;MONTHLY ANALYTICS;white;24;font=bold;anchor=mm]
+    $drawBarChart[50;100;500;200;values=12;45;78;34;labels=Jan;Feb;Mar;Apr;theme=cyberpunk]
+$endContainer[]
+$save[analytics.png]

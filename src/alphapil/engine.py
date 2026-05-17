@@ -130,6 +130,7 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         self.register_function("createCanvas", self._create_canvas)
         self.register_function("save", self._save_canvas)
         self.register_function("setVar", self._set_var)
+        self.register_function("getVar", self._get_var)
         self.register_function("getBytes", self.get_bytes)
         self.register_function("function", self._define_function)
         self.register_function("getErrors", self._get_errors)
@@ -193,6 +194,7 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         # State management commands
         self.register_function("setFont", self._cmd_set_font)
         self.register_function("loadFont", self._load_font)
+        self.register_function("getSystemFonts", self._get_system_fonts)
         self.register_function("setColor", self._cmd_set_color)
         self.register_function("setStroke", self._cmd_set_stroke)
 
@@ -237,19 +239,18 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
     def _set_var(self, name: str, value: str) -> str:
         """
         Set a variable value.
-        
-        Args:
-            name: Variable name (without {} wrapper)
-            value: Variable value
-            
-        Returns:
-            Confirmation message
         """
         try:
             self.set_variable(name, value)
             return f"Variable {name} set to {value}"
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $setVar[name;value]")
+    
+    def _get_var(self, name: str, default: str = "") -> str:
+        """
+        Get a variable value.
+        """
+        return str(self.variables.get(name, default))
     
     def _save_canvas(self, filename: str = "output.png") -> str:
         """

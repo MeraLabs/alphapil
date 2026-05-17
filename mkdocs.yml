@@ -47,8 +47,10 @@ nav:
       - createCanvas: functions/core/createCanvas.md
       - save: functions/core/save.md
       - setVar: functions/core/setVar.md
+      - getVar: functions/core/getVar.md
       - setFont: functions/core/setFont.md
       - loadFont: functions/core/loadFont.md
+      - getSystemFonts: functions/core/getSystemFonts.md
       - setColor: functions/core/setColor.md
       - setStroke: functions/core/setStroke.md
     - Geometric:
