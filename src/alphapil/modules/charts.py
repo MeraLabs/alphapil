@@ -32,97 +32,124 @@ class ChartsMixin(AlphaMixin):
         return [self._get_color(c) for c in colors]
 
     def _draw_bar_chart(self, x: str, y: str, w: str, h: str, 
-                       values: str, labels: str = "", theme: str = "modern",
+                       vals: str, labels: str = "", theme: str = "modern",
                        color: str = None, gap: str = "10", 
-                       show_labels: str = "true", font: str = None, font_size: str = "12") -> str:
+                       show_lab: str = "true", font: str = None, size: str = "20",
+                       radius: str = "0", max_val: str = None) -> str:
         self._ensure_canvas()
         try:
             x_pos = self._parse_position(x, 'x')
             y_pos = self._parse_position(y, 'y')
-            width = self._s(self._parse_num(w))
-            height = self._s(self._parse_num(h))
+            width = self._parse_length(w, 'x')
+            height = self._parse_length(h, 'y')
             
-            val_list = [float(v.strip()) for v in values.split(';') if v.strip()]
-            lab_list = [l.strip() for l in labels.split(';') if l.strip()]
+            # Parse values (supports both ; and , separators)
+            # AI Preference: Use , to avoid conflict with top-level ; delimiter
+            v_str = str(vals).replace(',', ';')
+            val_list = [float(v.strip()) for v in v_str.split(';') if v.strip()]
+            
+            l_str = str(labels).replace(',', ';')
+            lab_list = [l.strip() for l in l_str.split(';')]
             
             if not val_list:
                 raise ValueError("No values provided for bar chart")
             
-            bar_gap = self._s(self._parse_num(gap))
-            max_val = max(val_list) if val_list else 1
+            bar_gap = self._parse_length(gap, 'x')
+            r = self._parse_length(radius, 'x')
+            
+            # Normalization logic
+            actual_max = max(val_list) if val_list else 1
+            norm_max = float(self._parse_num(max_val)) if max_val else actual_max
+            norm_max = max(norm_max, actual_max) # Prevent overflow
+            
             num_bars = len(val_list)
             
+            # Calculate bar width based on available space and gaps
             bar_width = (width - (num_bars - 1) * bar_gap) / num_bars
             
             theme_colors = self._get_theme_colors(theme)
             chart_color = self._get_color(color) if color else None
             
-            f_size = int(self._s(self._parse_num(font_size)))
-            font_obj = self._get_font(font_size, font)
+            font_obj = self._get_font(size, font)
             
             for i, val in enumerate(val_list):
-                bar_height = (val / max_val) * height
+                bar_height = (val / norm_max) * height
                 bx = x_pos + i * (bar_width + bar_gap)
                 by = y_pos + (height - bar_height)
                 
                 fill_color = chart_color or theme_colors[i % len(theme_colors)]
                 
-                self.draw.rectangle([bx, by, bx + bar_width, y_pos + height], fill=fill_color)
+                bbox = [bx, by, bx + bar_width, y_pos + height]
                 
-                if show_labels.lower() == "true" and i < len(lab_list):
+                if r > 0:
+                    self.draw.rounded_rectangle(bbox, radius=r, fill=fill_color)
+                else:
+                    self.draw.rectangle(bbox, fill=fill_color)
+                
+                if show_lab.lower() == "true" and i < len(lab_list):
                     label = lab_list[i]
-                    bbox = self.draw.textbbox((0, 0), label, font=font_obj)
-                    tw = bbox[2] - bbox[0]
+                    l_bbox = self.draw.textbbox((0, 0), label, font=font_obj)
+                    tw = l_bbox[2] - l_bbox[0]
                     self.draw.text((bx + (bar_width - tw)/2, y_pos + height + self._s(5)), 
-                                   label, font=font_obj, fill=self._get_color('black'))
+                                   label, font=font_obj, fill=self._get_color(self._get_state('color', 'gray')))
             
             return f"Bar chart drawn at ({x_pos}, {y_pos})"
         except Exception as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawBarChart[x;y;w;h;values;labels;theme;color;gap;show_labels;font;font_size]")
+            raise ValueError(f"{e}\nProper Syntax: $drawBarChart[x;y;w;h;vals;labels;theme;color;gap;show_lab;font;size;radius;max_val]")
 
     def _draw_line_chart(self, x: str, y: str, w: str, h: str,
-                        values: str, labels: str = "", theme: str = "modern",
-                        color: str = None, line_width: str = "2",
-                        show_points: str = "true", font: str = None, font_size: str = "12") -> str:
+                        vals: str, labels: str = "", theme: str = "modern",
+                        color: str = None, lw: str = "2",
+                        points: str = "true", font: str = None, size: str = "20",
+                        max_val: str = None) -> str:
         self._ensure_canvas()
         try:
             x_pos = self._parse_position(x, 'x')
             y_pos = self._parse_position(y, 'y')
-            width = self._s(self._parse_num(w))
-            height = self._s(self._parse_num(h))
+            width = self._parse_length(w, 'x')
+            height = self._parse_length(h, 'y')
             
-            val_list = [float(v.strip()) for v in values.split(';') if v.strip()]
-            lab_list = [l.strip() for l in labels.split(';') if l.strip()]
+            # Parse values (supports both ; and , separators)
+            # AI Preference: Use , to avoid conflict with top-level ; delimiter
+            v_str = str(vals).replace(',', ';')
+            val_list = [float(v.strip()) for v in v_str.split(';') if v.strip()]
+            
+            l_str = str(labels).replace(',', ';')
+            lab_list = [l.strip() for l in l_str.split(';')]
             
             if not val_list:
                 raise ValueError("No values provided for line chart")
                 
-            max_val = max(val_list) if val_list else 1
+            # Normalization logic
+            actual_max = max(val_list) if val_list else 1
+            norm_max = float(self._parse_num(max_val)) if max_val else actual_max
+            norm_max = max(norm_max, actual_max) # Prevent overflow
+            
             num_points = len(val_list)
             
             theme_colors = self._get_theme_colors(theme)
             chart_color = self._get_color(color) or theme_colors[0]
-            lw = int(self._s(self._parse_num(line_width)))
+            line_width = int(self._parse_length(lw, 'x'))
             
-            points = []
+            points_list = []
             x_step = width / (num_points - 1) if num_points > 1 else width
             
             for i, val in enumerate(val_list):
                 px = x_pos + i * x_step
-                py = y_pos + height - (val / max_val) * height
-                points.append((px, py))
+                py = y_pos + height - (val / norm_max) * height
+                points_list.append((px, py))
             
-            if len(points) > 1:
-                self.draw.line(points, fill=chart_color, width=lw)
+            if len(points_list) > 1:
+                self.draw.line(points_list, fill=chart_color, width=line_width)
             
-            if show_points.lower() == "true":
-                r = lw * 1.5
-                for px, py in points:
+            if points.lower() == "true":
+                r = line_width * 1.5
+                for px, py in points_list:
                     self.draw.ellipse([px-r, py-r, px+r, py+r], fill=chart_color)
             
             return f"Line chart drawn at ({x_pos}, {y_pos})"
         except Exception as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawLineChart[x;y;w;h;values;labels;theme;color;line_width;show_points;font;font_size]")
+            raise ValueError(f"{e}\nProper Syntax: $drawLineChart[x;y;w;h;vals;labels;theme;color;lw;points;font;size;max_val]")
 
     def _draw_progress_bar(self, x: str, y: str, w: str, h: str,
                           value: str, max_value: str = "100",
@@ -132,12 +159,12 @@ class ChartsMixin(AlphaMixin):
         try:
             x_pos = self._parse_position(x, 'x')
             y_pos = self._parse_position(y, 'y')
-            width = self._s(self._parse_num(w))
-            height = self._s(self._parse_num(h))
+            width = self._parse_length(w, 'x')
+            height = self._parse_length(h, 'y')
             
             val = float(self._parse_num(value))
             m_val = float(self._parse_num(max_value))
-            r = self._s(self._parse_num(radius))
+            r = self._parse_length(radius, 'x')
             
             progress = min(max(val / m_val, 0), 1)
             

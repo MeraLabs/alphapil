@@ -60,8 +60,8 @@ class EffectsMixin(AlphaMixin):
         try:
             x1 = self._parse_position(x, 'x')
             y1 = self._parse_position(y, 'y')
-            width = self._s(self._parse_num(w))
-            height = self._s(self._parse_num(h))
+            width = self._parse_length(w, 'x')
+            height = self._parse_length(h, 'y')
             rot_angle = float(self._parse_num(angle))
 
             # Parse color stops: "red,0;blue,1"
@@ -122,7 +122,7 @@ class EffectsMixin(AlphaMixin):
         try:
             x_pos = self._parse_position(cx, 'x')
             y_pos = self._parse_position(cy, 'y')
-            r = self._s(self._parse_num(radius))
+            r = self._parse_length(radius, 'x')
             
             stops = []
             for item in colors.split(';'):
@@ -168,7 +168,7 @@ class EffectsMixin(AlphaMixin):
         """
         self._ensure_canvas()
         try:
-            r = self._s(self._parse_num(radius))
+            r = self._parse_length(radius, 'x')
             
             if x is None:
                 # Blur whole canvas
@@ -178,8 +178,8 @@ class EffectsMixin(AlphaMixin):
             
             x1 = self._parse_position(x, 'x')
             y1 = self._parse_position(y, 'y')
-            width = self._s(self._parse_num(w))
-            height = self._s(self._parse_num(h))
+            width = self._parse_length(w, 'x')
+            height = self._parse_length(h, 'y')
             
             box = (int(x1), int(y1), int(x1 + width), int(y1 + height))
             region = self.canvas.crop(box)

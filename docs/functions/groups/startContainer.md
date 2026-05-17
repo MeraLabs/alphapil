@@ -3,15 +3,17 @@
 Starts a new container box. Keywords like `center`, `right`, and `bottom` inside this box will resolve relative to its boundaries instead of the whole canvas.
 
 ## Syntax
-`$startContainer[x;y;width;height]`
+`$startContainer[x;y;width;height;padding;anchor]`
 
 ## Parameters
 | Parameter | Description |
 | :--- | :--- |
-| `x` | X position of the container top-left corner |
-| `y` | Y position of the container top-left corner |
+| `x` | X position of the container top-left corner (or adjusted by anchor) |
+| `y` | Y position of the container top-left corner (or adjusted by anchor) |
 | `width` | Width of the container |
 | `height` | Height of the container |
+| `padding` | Optional internal padding applied to elements inside |
+| `anchor` | Anchor position for container placement (e.g. `lt`, `mm`, `rb`) |
 
 ## Example
 ```bash

@@ -11,7 +11,9 @@ from PIL import ImageDraw
 import math
 
 
-class ShapesMixin:
+from .base import AlphaMixin
+
+class ShapesMixin(AlphaMixin):
     """
     Mixin class providing shape drawing functionality.
     
@@ -28,13 +30,13 @@ class ShapesMixin:
                    outline_width: str = None, radius: str = "0", anchor: str = "lt") -> str:
         try:
             self._ensure_canvas()
-            w = self._s(self._parse_num(width))
-            h = self._s(self._parse_num(height))
-            r = self._s(self._parse_num(radius))
+            w = self._parse_length(width, 'x')
+            h = self._parse_length(height, 'y')
+            r = self._parse_length(radius, 'x')
             
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
-            lw = int(self._s(self._parse_num(outline_width))) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
+            lw = int(self._parse_length(outline_width, 'x')) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
             
             # Apply anchor offset
             ax, ay = self._get_anchor_offset(anchor, w, h)
@@ -54,16 +56,33 @@ class ShapesMixin:
             elif lw > 0:
                 outline_color = self._get_color(self._get_state('stroke_color', 'black'))
 
-            if r > 0 and hasattr(self.draw, 'rounded_rectangle'):
+            # When fill has alpha < 255, draw on a temporary layer and
+            # alpha_composite back. Pillow's ImageDraw replaces pixels
+            # instead of blending, which destroys the background underneath.
+            needs_composite = (fill_color is not None and len(fill_color) == 4 
+                               and fill_color[3] < 255)
+            
+            if needs_composite:
+                from PIL import Image as _Image
+                layer = _Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
+                layer_draw = ImageDraw.Draw(layer)
+                target_draw = layer_draw
+            else:
+                target_draw = self.draw
+
+            if r > 0 and hasattr(target_draw, 'rounded_rectangle'):
                 if outline_color:
-                    self.draw.rounded_rectangle(bbox, radius=r, fill=fill_color, outline=outline_color, width=lw)
+                    target_draw.rounded_rectangle(bbox, radius=r, fill=fill_color, outline=outline_color, width=lw)
                 else:
-                    self.draw.rounded_rectangle(bbox, radius=r, fill=fill_color)
+                    target_draw.rounded_rectangle(bbox, radius=r, fill=fill_color)
             else:
                 if outline_color:
-                    self.draw.rectangle(bbox, fill=fill_color, outline=outline_color, width=lw)
+                    target_draw.rectangle(bbox, fill=fill_color, outline=outline_color, width=lw)
                 else:
-                    self.draw.rectangle(bbox, fill=fill_color)
+                    target_draw.rectangle(bbox, fill=fill_color)
+            
+            if needs_composite:
+                self.canvas.alpha_composite(layer)
 
             return f"Rectangle drawn at ({x1}, {y1}) size {w}x{h}" + (f" with radius {r}" if r > 0 else "")
         except ValueError as e:
@@ -88,12 +107,12 @@ class ShapesMixin:
                      outline_width: str = None, anchor: str = "mm") -> str:
         try:
             self._ensure_canvas()
-            r = self._s(self._parse_num(radius))
+            r = self._parse_length(radius, 'x')
             w = h = r * 2
             
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
-            lw = int(self._s(self._parse_num(outline_width))) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
+            lw = int(self._parse_length(outline_width, 'x')) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
 
             # Universal Anchor Logic: Anchor offset is calculated relative to center for 'mm'
             # or shifted for others.
@@ -140,7 +159,7 @@ class ShapesMixin:
             
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
-            line_width = int(self._s(self._parse_num(width))) if width else int(self._s(self._get_state('stroke_width', 1)))
+            line_width = int(self._parse_length(width, 'x')) if width else int(self._s(self._get_state('stroke_width', 1)))
 
             line_color = self._get_color(color)
 
@@ -162,7 +181,7 @@ class ShapesMixin:
             self._ensure_canvas()
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
-            lw = int(self._s(self._parse_num(outline_width))) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
+            lw = int(self._parse_length(outline_width, 'x')) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
 
             raw_points = [p.strip() for p in points_list.split(",")]
             if len(raw_points) < 6 or len(raw_points) % 2 != 0:
@@ -201,7 +220,7 @@ class ShapesMixin:
             self._ensure_canvas()
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
-            lw = int(self._s(self._parse_num(outline_width))) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
+            lw = int(self._parse_length(outline_width, 'x')) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
 
             p1 = (self._parse_position(x1, 'x'), self._parse_position(y1, 'y'))
             p2 = (self._parse_position(x2, 'x'), self._parse_position(y2, 'y'))
@@ -233,13 +252,13 @@ class ShapesMixin:
             self._ensure_canvas()
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
-            lw = int(self._s(self._parse_num(outline_width))) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
+            lw = int(self._parse_length(outline_width, 'x')) if outline_width else int(self._s(self._get_state('stroke_width', 0)))
 
             cx = self._parse_position(x, 'x')
             cy = self._parse_position(y, 'y')
             num_points = int(self._parse_num(points))
-            r_outer = self._s(self._parse_num(outer_radius))
-            r_inner = self._s(self._parse_num(inner_radius))
+            r_outer = self._parse_length(outer_radius, 'x')
+            r_inner = self._parse_length(inner_radius, 'x')
 
             if num_points < 2:
                 raise ValueError("Star must have at least 2 points")
@@ -279,14 +298,14 @@ class ShapesMixin:
         try:
             x1 = self._parse_position(x, 'x')
             y1 = self._parse_position(y, 'y')
-            width_box = self._s(self._parse_num(w))
-            height_box = self._s(self._parse_num(h))
+            width_box = self._parse_length(w, 'x')
+            height_box = self._parse_length(h, 'y')
             start = self._parse_num(start_angle)
             end = self._parse_num(end_angle)
             
             # Apply defaults from state
             color = color or self._get_state('color', 'black')
-            line_width = int(self._s(self._parse_num(width))) if width else int(self._s(self._get_state('stroke_width', 1)))
+            line_width = int(self._parse_length(width, 'x')) if width else int(self._s(self._get_state('stroke_width', 1)))
 
             bbox = [(x1, y1), (x1 + width_box, y1 + height_box)]
             line_color = self._get_color(color)

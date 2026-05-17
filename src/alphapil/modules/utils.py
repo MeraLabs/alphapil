@@ -10,7 +10,10 @@ import re
 from typing import Union
 
 
-class UtilsMixin:
+from .base import AlphaMixin
+
+
+class UtilsMixin(AlphaMixin):
     """
     Mixin class providing utility functions for various operations.
     

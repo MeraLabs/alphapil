@@ -8,7 +8,9 @@ merging layers, and applying image masks.
 from typing import Dict, Optional, Tuple, Union
 from PIL import Image, ImageDraw, ImageChops
 
-class MaskingMixin:
+from .base import AlphaMixin
+
+class MaskingMixin(AlphaMixin):
     """
     Mixin class providing layering and masking functionality.
     

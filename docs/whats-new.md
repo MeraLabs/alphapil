@@ -4,6 +4,28 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 17, 2026 (v0.2.3)
+!!! abstract "Major Feature Update: High-DPI Rendering & Chart Quality"
+    This update introduces a robust post-processing pipeline for crystal-clear image exports at retina/High-DPI resolutions, alongside significant readability improvements for charts.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **💎 Rendering** | **Output Scaling** | Added `scale` to `$createCanvas` for high-DPI/Retina output independent of AA. | [Docs](functions/core/createCanvas.md) |
+    | **✨ Quality** | **Sharpening Pipeline** | Engine now automatically applies `UnsharpMask` after Lanczos downsampling for superior crispness. | [GitHub](https://github.com/MeraLabs/AlphaPIL) |
+    | **📊 Charts** | **Label Legibility** | Increased default chart label `size` to 20 and added adaptive state-based coloring. | [Docs](functions/images/drawBarChart.md) |
+    | **🤖 AI** | **Manifest v0.2.3** | Updated manifest with proper scale logic, chart clipping tips, and updated syntax. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
+## May 17, 2026 (v0.2.2)
+!!! abstract "Patch Update: Container Anchor Support"
+    This patch adds anchor support for the `startContainer` function to easily center containers on the canvas.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🎯 Layout** | **Container Anchor** | Added `anchor` parameter to `$startContainer` allowing precise centering (`anchor=mm`). | [Docs](functions/groups/startContainer.md) |
+    | **🤖 AI** | **Manifest v0.2.2** | Updated technical manifest to document `$startContainer` anchor parameter. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
 ## May 17, 2026
 !!! abstract "Major Feature Update: High-Res Rendering & Modern UI"
     This update introduces the foundation for professional-grade image generation and modern UI components.

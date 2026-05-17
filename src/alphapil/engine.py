@@ -12,7 +12,7 @@ from .interpreter import CanvasInterpreter
 from .modules import AlphaMixin, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin, EffectsMixin, ChartsMixin
 
 
-class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin, EffectsMixin, ChartsMixin):
+class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin, EffectsMixin, ChartsMixin, AlphaMixin):
     """
     High-level canvas engine that extends CanvasInterpreter with Pillow-based
     image generation capabilities and all module mixins.
@@ -201,30 +201,41 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         # Grouping commands
         self.register_function("startGroup", self._start_group)
         self.register_function("endGroup", self._end_group)
+        self.register_function("startClip", self._start_clip)
+        self.register_function("endClip", self._end_clip)
         self.register_function("startContainer", self._start_container)
         self.register_function("endContainer", self._end_container)
     
-    def _create_canvas(self, width: str, height: str, color: str = "white", aa: str = "1", strict: str = "true") -> str:
+    def _create_canvas(self, width: str, height: str, color: str = "white", aa: str = "1", strict: str = "true", scale: str = "1") -> str:
         """
-        Create a new canvas with optional Anti-Aliasing (aa) and strict mode.
+        Create a new canvas with optional Anti-Aliasing (aa), scale factor, and strict mode.
+        
+        Args:
+            scale: Output resolution multiplier. scale=2 produces a 2x image for Retina/HiDPI.
+                   This is independent of AA — use aa for edge smoothing, scale for output size.
         """
         try:
             # Parse base dimensions
             base_w = int(self._parse_num(width))
             base_h = int(self._parse_num(height))
             aa_factor = int(self._parse_num(aa))
+            scale_factor = max(1, int(self._parse_num(scale)))
             is_strict = str(strict).lower() in ['true', '1', 'yes', 'on']
             
             # Set state
             self._set_state('aa', aa_factor)
+            self._set_state('scale', scale_factor)
             self._set_state('strict', is_strict)
             self.strict_mode = is_strict
             
-            # Internal dimensions (Upscaled)
-            w = base_w * aa_factor
-            h = base_h * aa_factor
+            # Output size = base * scale (what the user actually gets)
+            # Internal size = base * scale * aa (for smooth rendering)
+            output_w = base_w * scale_factor
+            output_h = base_h * scale_factor
+            w = output_w * aa_factor
+            h = output_h * aa_factor
             
-            self.canvas_size = (base_w, base_h) # Store logical size
+            self.canvas_size = (output_w, output_h)  # Final output size
             
             # Parse color
             bg_color = self._get_color(color) or (255, 255, 255, 255)
@@ -232,9 +243,14 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
             self.canvas = Image.new("RGBA", (w, h), bg_color)
             self.draw = ImageDraw.Draw(self.canvas)
             
-            return f"Canvas created: {base_w}x{base_h}" + (f" with AA={aa_factor}" if aa_factor > 1 else "")
+            parts = [f"Canvas created: {base_w}x{base_h}"]
+            if scale_factor > 1:
+                parts.append(f"scale={scale_factor} (output: {output_w}x{output_h})")
+            if aa_factor > 1:
+                parts.append(f"AA={aa_factor}")
+            return " | ".join(parts)
         except ValueError as e:
-            raise ValueError(f"{e}\nProper Syntax: $createCanvas[width;height;color;aa;strict]")
+            raise ValueError(f"{e}\nProper Syntax: $createCanvas[width;height;color;aa;strict;scale]")
     
     def _set_var(self, name: str, value: str) -> str:
         """
@@ -254,7 +270,8 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
     
     def _save_canvas(self, filename: str = "output.png") -> str:
         """
-        Save the current canvas with Lanczos downscaling if AA is enabled.
+        Save the current canvas with Lanczos downscaling if AA is enabled,
+        post-downscale sharpening for crispness, and DPI metadata.
         """
         if not self.canvas:
             raise RuntimeError("No canvas to save. Call $createCanvas first.")
@@ -262,13 +279,23 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         try:
             img = self.canvas
             aa_factor = self._get_aa()
+            scale_factor = int(self._get_state('scale', 1))
             
             # Downscale if AA was used
             if aa_factor > 1:
                 img = img.resize(self.canvas_size, Image.Resampling.LANCZOS)
+            
+            # Post-downscale sharpening to restore crispness lost during resize
+            if aa_factor > 1 or scale_factor > 1:
+                from PIL import ImageFilter
+                img = img.filter(ImageFilter.UnsharpMask(
+                    radius=1.0, percent=60, threshold=2
+                ))
                 
             # Set high quality parameters for various formats
-            save_params = {"optimize": True}
+            # Embed DPI metadata scaled for output resolution
+            dpi = 72 * scale_factor
+            save_params = {"optimize": True, "dpi": (dpi, dpi)}
             if filename.lower().endswith(('.jpg', '.jpeg')):
                 save_params.update({"quality": 100, "subsampling": 0})
             
@@ -279,7 +306,8 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
     
     def get_canvas_bytes(self, format: str = "PNG") -> bytes:
         """
-        Get the canvas bytes with Lanczos downscaling if AA is enabled.
+        Get the canvas bytes with Lanczos downscaling if AA is enabled,
+        post-downscale sharpening for crispness, and DPI metadata.
         """
         if not self.canvas:
             raise RuntimeError("No canvas available. Call $createCanvas first.")
@@ -287,15 +315,24 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         try:
             img = self.canvas
             aa_factor = self._get_aa()
+            scale_factor = int(self._get_state('scale', 1))
             
             # Downscale if AA was used
             if aa_factor > 1:
                 img = img.resize(self.canvas_size, Image.Resampling.LANCZOS)
+            
+            # Post-downscale sharpening to restore crispness lost during resize
+            if aa_factor > 1 or scale_factor > 1:
+                from PIL import ImageFilter
+                img = img.filter(ImageFilter.UnsharpMask(
+                    radius=1.0, percent=60, threshold=2
+                ))
                 
             img_bytes = io.BytesIO()
             
-            # Set high quality parameters
-            save_params = {"format": format, "optimize": True}
+            # Set high quality parameters with DPI metadata
+            dpi = 72 * scale_factor
+            save_params = {"format": format, "optimize": True, "dpi": (dpi, dpi)}
             if format.upper() in ["JPEG", "JPG"]:
                 save_params.update({"quality": 100, "subsampling": 0})
                 

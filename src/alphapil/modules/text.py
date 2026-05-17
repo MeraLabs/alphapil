@@ -13,7 +13,10 @@ from typing import Union, Dict, Optional, List
 from PIL import ImageDraw, ImageFont, ImageFilter, Image
 
 
-class TextMixin:
+from .base import AlphaMixin
+
+
+class TextMixin(AlphaMixin):
     """
     Mixin class providing text rendering and manipulation functionality.
     """
@@ -132,7 +135,8 @@ class TextMixin:
                    shadow_color: str = None, shadow_offset: str = "0,0",
                    glow_color: str = None, glow_radius: str = "0",
                    max_width: str = None, truncate_width: str = None,
-                   gradient_colors: str = None) -> str:
+                   gradient_colors: str = None,
+                   line_height: str = None, letter_spacing: str = "0") -> str:
         """
         Draw text on the canvas with optional stroke, shadow, glow, wrapping, truncation, and gradient.
         Uses global state defaults (setFont, setColor, setStroke) if parameters are missing.
@@ -150,6 +154,8 @@ class TextMixin:
             max_width: Wrap text if it exceeds this width
             truncate_width: Truncate text if it exceeds this width
             gradient_colors: Comma-separated colors for vertical gradient (e.g., "red,blue")
+            line_height: Multiplier for line spacing (e.g. 1.5)
+            letter_spacing: Extra pixels between characters (tracking)
         """
         self._ensure_canvas()
         
@@ -181,11 +187,16 @@ class TextMixin:
             x_pos = self._parse_position(x, 'x')
             y_pos = self._parse_position(y, 'y')
             # Font size is already scaled inside _get_font
-            gr = int(self._s(self._parse_num(glow_radius)))
+            gr = int(self._parse_length(glow_radius, 'x'))
+            tracking = self._parse_length(letter_spacing, 'x')
             
             text_color = self._get_color(color)
             font_obj = self._get_font(size, font)
             
+            # Metrics for perfect alignment
+            ascent, descent = font_obj.getmetrics()
+            line_spacing = int(self._parse_num(line_height) * (ascent + descent)) if line_height else None
+
             # 1. Apply Glow Effect
             if glow_color and gr > 0:
                 gc = self._get_color(glow_color)
@@ -235,11 +246,29 @@ class TextMixin:
                 'stroke_fill': stroke_color
             }
             if anchor: text_kwargs['anchor'] = anchor
+            if line_spacing: text_kwargs['spacing'] = line_spacing
+
+            # Manual Letter Spacing (Tracking)
+            if tracking > 0:
+                current_x = x_pos
+                # Handle anchor offset for tracking
+                if anchor and 'r' in anchor:
+                    # Calculate total width with tracking
+                    full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                    current_x -= full_w
+                elif anchor and ('c' in anchor or 'm' in anchor):
+                    full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                    current_x -= full_w / 2
+
+                for char in text:
+                    self.draw.text((current_x, y_pos), char, **{k:v for k,v in text_kwargs.items() if k not in ['xy', 'text', 'spacing']})
+                    current_x += self.draw.textlength(char, font=font_obj) + tracking
+            else:
+                self.draw.text(**text_kwargs)
             
-            self.draw.text(**text_kwargs)
             return f"Text '{text}' drawn at ({x_pos}, {y_pos})"
         except ValueError as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors]")
+            raise ValueError(f"{e}\nProper Syntax: $drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors;line_height;letter_spacing]")
     
     def _to_upper(self, text: str) -> str:
         """

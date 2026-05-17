@@ -11,7 +11,10 @@ from PIL import Image, ImageFilter, ImageDraw, ImageEnhance
 import aiohttp
 
 
-class ImagesMixin:
+from .base import AlphaMixin
+
+
+class ImagesMixin(AlphaMixin):
     """
     Mixin class providing image manipulation and rendering functionality.
     
@@ -56,22 +59,22 @@ class ImagesMixin:
             img = await self._load_image_async(image_path)
             
             # 3. Resize logic
-            target_w = int(self._s(self._parse_num(width))) if width else None
-            target_h = int(self._s(self._parse_num(height))) if height else None
+            target_w = self._parse_length(width, 'x') if width else None
+            target_h = self._parse_length(height, 'y') if height else None
             
             if target_w and target_h:
-                img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
             elif target_w:
                 aspect = img.height / img.width
-                target_h = int(target_w * aspect)
-                img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                target_h = target_w * aspect
+                img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
             elif target_h:
                 aspect = img.width / img.height
-                target_w = int(target_h * aspect)
-                img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                target_w = target_h * aspect
+                img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
             
             w, h = img.size
-            radius_val = int(self._s(self._parse_num(radius))) if radius else 0
+            radius_val = int(self._parse_length(radius, 'x')) if radius else 0
             
             # 4. Apply Anchor Offset
             ax, ay = self._get_anchor_offset(final_anchor, w, h)
@@ -268,17 +271,17 @@ class ImagesMixin:
             img = await self._load_image_async(path)
             
             # Resize if fixed dimensions provided
-            target_w = int(self._parse_num(fixed_width)) if fixed_width else None
-            target_h = int(self._parse_num(fixed_height)) if fixed_height else None
+            target_w = self._parse_length(fixed_width, 'x') if fixed_width else None
+            target_h = self._parse_length(fixed_height, 'y') if fixed_height else None
             
             if target_w and target_h:
-                img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
             elif target_w:
                 aspect = img.height / img.width
-                img = img.resize((target_w, int(target_w * aspect)), Image.Resampling.LANCZOS)
+                img = img.resize((int(target_w), int(target_w * aspect)), Image.Resampling.LANCZOS)
             elif target_h:
                 aspect = img.width / img.height
-                img = img.resize((int(target_h * aspect), target_h), Image.Resampling.LANCZOS)
+                img = img.resize((int(target_h * aspect), int(target_h)), Image.Resampling.LANCZOS)
 
             # Ensure RGBA for transparency support
             if img.mode != 'RGBA':
