@@ -47,7 +47,7 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
-## May 17, 2026 (v0.2.1)
+## May 17, 2026 (v0.2.3)
 !!! abstract "Patch Update: Bug Fixes & Variable Support"
     This patch fixes critical import issues and improves variable handling for AI agents.
 
