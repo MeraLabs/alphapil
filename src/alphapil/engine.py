@@ -131,6 +131,8 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         self.register_function("save", self._save_canvas)
         self.register_function("setVar", self._set_var)
         self.register_function("getBytes", self.get_bytes)
+        self.register_function("function", self._define_function)
+        self.register_function("getErrors", self._get_errors)
         
         # Shape functions from ShapesMixin
         self.register_function("drawRect", self._draw_rect)
@@ -200,18 +202,21 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
         self.register_function("startContainer", self._start_container)
         self.register_function("endContainer", self._end_container)
     
-    def _create_canvas(self, width: str, height: str, color: str = "white", aa: str = "1") -> str:
+    def _create_canvas(self, width: str, height: str, color: str = "white", aa: str = "1", strict: str = "true") -> str:
         """
-        Create a new canvas with optional Anti-Aliasing (aa).
+        Create a new canvas with optional Anti-Aliasing (aa) and strict mode.
         """
         try:
             # Parse base dimensions
             base_w = int(self._parse_num(width))
             base_h = int(self._parse_num(height))
             aa_factor = int(self._parse_num(aa))
+            is_strict = str(strict).lower() in ['true', '1', 'yes', 'on']
             
             # Set state
             self._set_state('aa', aa_factor)
+            self._set_state('strict', is_strict)
+            self.strict_mode = is_strict
             
             # Internal dimensions (Upscaled)
             w = base_w * aa_factor
@@ -227,7 +232,7 @@ class CanvasEngine(CanvasInterpreter, AlphaMixin, ShapesMixin, TextMixin, Images
             
             return f"Canvas created: {base_w}x{base_h}" + (f" with AA={aa_factor}" if aa_factor > 1 else "")
         except ValueError as e:
-            raise ValueError(f"{e}\nProper Syntax: $createCanvas[width;height;color;aa]")
+            raise ValueError(f"{e}\nProper Syntax: $createCanvas[width;height;color;aa;strict]")
     
     def _set_var(self, name: str, value: str) -> str:
         """

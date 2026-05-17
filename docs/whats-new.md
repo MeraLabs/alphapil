@@ -18,6 +18,8 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
     | **📊 Charts** | **Bar Charts** | Themed, automatic scaling bar charts for data visualization. | [Docs](functions/images/drawBarChart.md) |
     | **📉 Charts** | **Line Charts** | Professional line graphs with multiple color themes. | [Docs](functions/images/drawLineChart.md) |
     | **⏳ Charts** | **Progress Bars** | Modern rounded progress bars with custom radius and styling. | [Docs](functions/images/drawProgressBar.md) |
+    | **🛠️ Dev** | **Custom Macros** | Define your own functions with `$function` for reusable UI components. | [Docs](functions/utils/function.md) |
+    | **🛡️ Safety** | **Strict Mode** | Toggle `strict=false` to prevent errors from crashing the renderer. | [Docs](functions/core/createCanvas.md) |
     | **📦 Core** | **Dependency Cleanup** | Removed `discord.py` from core for a lighter, faster package. | [GitHub](https://github.com/MeraLabs/AlphaPIL) |
 
 ---

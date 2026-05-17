@@ -23,6 +23,9 @@ class CanvasInterpreter:
         """Initialize the interpreter with an empty function registry."""
         self.functions: Dict[str, Callable] = {}
         self.variables: Dict[str, Any] = {}
+        self.macros: Dict[str, Dict[str, Any]] = {}
+        self.strict_mode: bool = True
+        self.errors: List[str] = []
     
     def register_function(self, name: str, func: Callable) -> None:
         """
@@ -196,18 +199,24 @@ class CanvasInterpreter:
                 processed_nested_args.append(await self._preprocess_argument(a))
             
             # Execute the function
-            if func_name not in self.functions:
-                raise ValueError(f"Unknown function: ${func_name}")
-            
-            try:
-                result = await self._execute_function(func_name, processed_nested_args)
-                # Clean up numeric results
-                if func_name in ['math', 'random', 'length', 'getHex']:
-                    result = str(result).strip()
-                else:
-                    result = str(result)
-            except Exception as e:
-                raise RuntimeError(f"{e}")
+            if func_name not in self.functions and func_name not in self.macros:
+                if self.strict_mode:
+                    raise ValueError(f"Unknown function: ${func_name}")
+                self.errors.append(f"Unknown function: ${func_name}")
+                result = ""
+            else:
+                try:
+                    result = await self._execute_function(func_name, processed_nested_args)
+                    # Clean up numeric results
+                    if func_name in ['math', 'random', 'length', 'getHex']:
+                        result = str(result).strip()
+                    else:
+                        result = str(result)
+                except Exception as e:
+                    if self.strict_mode:
+                        raise RuntimeError(f"{e}")
+                    self.errors.append(str(e))
+                    result = ""
             
             # Replace in original string
             arg = arg[:match.start()] + result + arg[match.end():]
@@ -219,18 +228,40 @@ class CanvasInterpreter:
     
     async def _execute_function(self, func_name: str, args: List[str]) -> str:
         """
-        Execute a registered function with parsed arguments (Async).
-        Supports both sync and async functions, and flexible argument mapping.
-        
-        Args:
-            func_name: Name of the function to execute
-            args: List of argument strings
-            
-        Returns:
-            String result of the function execution
+        Execute a registered function or a user-defined macro.
         """
+        # 1. Check if it's a Macro
+        if func_name in self.macros:
+            macro = self.macros[func_name]
+            macro_args = macro['args']
+            macro_body = macro['body']
+            
+            # Map passed args to macro variables
+            # We use a temporary variable scope for the macro
+            old_vars = self.variables.copy()
+            for i, arg_name in enumerate(macro_args):
+                if i < len(args):
+                    self.set_variable(arg_name, args[i])
+            
+            # Parse the macro body
+            try:
+                result = await self.parse(macro_body)
+                # Restore variables
+                self.variables = old_vars
+                return result
+            except Exception as e:
+                self.variables = old_vars
+                if self.strict_mode:
+                    raise e
+                self.errors.append(f"Macro {func_name} failed: {e}")
+                return ""
+
+        # 2. Check if it's a registered built-in function
         if func_name not in self.functions:
-            raise ValueError(f"Unknown function: ${func_name}")
+            if self.strict_mode:
+                raise ValueError(f"Unknown function: ${func_name}")
+            self.errors.append(f"Unknown function: ${func_name}")
+            return ""
         
         try:
             func = self.functions[func_name]
@@ -340,7 +371,10 @@ class CanvasInterpreter:
             try:
                 func_result = await self._execute_function(func_name, processed_args)
             except Exception as e:
-                raise RuntimeError(f"{e}")
+                if self.strict_mode:
+                    raise RuntimeError(f"{e}")
+                self.errors.append(str(e))
+                func_result = ""
             
             # Step 4: Replace the function call with its result
             result = result[:match.start()] + func_result + result[match.end():]

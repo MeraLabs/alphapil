@@ -89,4 +89,6 @@ nav:
       - math: functions/utils/math.md
       - random: functions/utils/random.md
       - if: functions/utils/if.md
+      - function: functions/utils/function.md
+      - getErrors: functions/utils/getErrors.md
   - Examples: examples.md

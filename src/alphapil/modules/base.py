@@ -23,7 +23,8 @@ class AlphaMixin:
             'color': 'black',
             'stroke_width': 1,
             'stroke_color': 'black',
-            'aa': 1
+            'aa': 1,
+            'strict': True
         }
         self._group_stack = [] # Stack of (x, y) offsets
         self._container_stack = [] # Stack of (x, y, w, h)
@@ -299,6 +300,27 @@ class AlphaMixin:
         if x < 0 or y < 0 or x + width > cw or y + height > ch:
             pass
     
+    def _handle_error(self, message: str):
+        """Handle error based on strict mode."""
+        if self._get_state('strict', True):
+            raise RuntimeError(message)
+        else:
+            self.errors.append(message)
+
+    def _define_function(self, name: str, args: str, body: str) -> str:
+        """Define a custom macro function."""
+        try:
+            arg_list = [a.strip() for a in args.split(',') if a.strip()]
+            self.macros[name] = {'args': arg_list, 'body': body}
+            return f"Function ${name} defined"
+        except Exception as e:
+            self._handle_error(f"Failed to define function: {e}")
+            return ""
+
+    def _get_errors(self) -> str:
+        """Get all internal errors as a semicolon separated string."""
+        return "; ".join(self.errors)
+
     def _ensure_canvas(self) -> None:
         """
         Ensure that a canvas exists before performing operations.
