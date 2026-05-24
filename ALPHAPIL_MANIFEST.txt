@@ -43,6 +43,7 @@ $drawCircle[cx;cy;radius;color;outline;fill;lw;anchor]
 $drawRoundedRect[x;y;w;h;radius;color;outline;fill;lw;anchor]
 $drawLine[x1;y1;x2;y2;color;width]
 $drawPolygon[points;color;outline;fill;lw] (points: x1,y1,x2,y2)
+$drawTriangle[x1;y1;x2;y2;x3;y3;color;outline;fill;lw]
 $drawStar[x;y;points;outer_r;inner_r;color;outline;fill;lw]
 $drawArc[x;y;w;h;start;end;color;width]
 
@@ -51,12 +52,18 @@ $drawText[x;y;text;color;size;font;anchor;sw;sf;shadow_c;shadow_off;glow_c;glow_
 - line_h: Line spacing multiplier (e.g. 1.2)
 - tracking: Letter spacing in pixels.
 $drawTextMid[x1;y1;x2;y2;text;...] | $drawTextIn[x;y;w;h;text;...]
+$toUpper[text] | $toLower[text] | $toTitle[text] | $measureText[text;size;font]
+$wrapText[text;width;size;font] | $autoSizeText[text;max_width;start;min;font] | $truncateText[text;width;size;font;suffix]
 
 --- IMAGES & EFFECTS ---
 $drawImage[x;y;path;w;h;opacity;radius;circle;anchor]
+$useImageAsCanvas[path;h_var;w_var;fixed_w;fixed_h] | $clearImageCache[]
 $drawLinearGradient[x;y;w;h;stops;angle] (stops: "color,0;color,1")
 $drawRadialGradient[cx;cy;r;stops]
 $blur[radius;x;y;w;h] (Region blur for Glassmorphism)
+
+--- MASKING & LAYERS ---
+$createLayer[name] | $switchLayer[name] | $mergeLayer[name;x;y;opacity;target] | $applyMask[mask_path;x;y;invert]
 
 --- DATA VISUALIZATION ---
 $drawBarChart[x;y;w;h;vals;labels;theme;color;gap;show_lab;font;size;radius;max_val]
@@ -64,8 +71,10 @@ $drawLineChart[x;y;w;h;vals;labels;theme;color;lw;points;font;size;max_val]
 $drawProgressBar[x;y;w;h;val;max;theme;color;bg;radius]
 (AI Note: Use comma-separated lists for vals and labels: vals=1,2,3)
 
---- LOGIC & MACROS ---
+--- LOGIC & UTILS ---
 $if[condition;true;false] | $math[expr] | $random[min;max]
+$length[text] | $replace[text;old;new] | $substring[text;start;end]
+$split[text;separator] | $join[separator;item1;item2;...] | $getHex[color_name]
 $function[name;args;body] (Custom macros: {arg1})
 - Example: $function[Card;x,y; $drawRect[{x};{y};200;100;white] ]
 

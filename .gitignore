@@ -10,3 +10,4 @@ __pycache__/
 .env
 tools/
 GEMINI.md
+ALPHAPIL_MANIFEST.txt

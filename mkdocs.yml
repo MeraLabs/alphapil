@@ -46,6 +46,7 @@ nav:
       - Overview: functions/core.md
       - createCanvas: functions/core/createCanvas.md
       - save: functions/core/save.md
+      - getBytes: functions/core/getBytes.md
       - setVar: functions/core/setVar.md
       - getVar: functions/core/getVar.md
       - setFont: functions/core/setFont.md
@@ -60,6 +61,7 @@ nav:
       - drawRoundedRect: functions/geometric/drawRoundedRect.md
       - drawLine: functions/geometric/drawLine.md
       - drawPolygon: functions/geometric/drawPolygon.md
+      - drawTriangle: functions/geometric/drawTriangle.md
       - drawStar: functions/geometric/drawStar.md
       - drawArc: functions/geometric/drawArc.md
     - Text:
@@ -68,10 +70,20 @@ nav:
       - drawTextStroke: functions/text/drawTextStroke.md
       - drawTextGradient: functions/text/drawTextGradient.md
       - drawTextMid: functions/text/drawTextMid.md
+      - drawTextIn: functions/text/drawTextIn.md
+      - toUpper: functions/text/toUpper.md
+      - toLower: functions/text/toLower.md
+      - toTitle: functions/text/toTitle.md
+      - measureText: functions/text/measureText.md
+      - wrapText: functions/text/wrapText.md
+      - autoSizeText: functions/text/autoSizeText.md
+      - truncateText: functions/text/truncateText.md
     - Images:
       - Overview: functions/images.md
       - drawImage: functions/images/drawImage.md
+      - useImageAsCanvas: functions/images/useImageAsCanvas.md
       - imageFilter: functions/images/imageFilter.md
+      - clearImageCache: functions/images/clearImageCache.md
       - drawLinearGradient: functions/images/drawLinearGradient.md
       - drawRadialGradient: functions/images/drawRadialGradient.md
       - blur: functions/images/blur.md
@@ -80,10 +92,14 @@ nav:
       - drawProgressBar: functions/images/drawProgressBar.md
     - Masking:
       - createLayer: functions/masking/createLayer.md
+      - switchLayer: functions/masking/switchLayer.md
       - mergeLayer: functions/masking/mergeLayer.md
+      - applyMask: functions/masking/applyMask.md
     - Groups:
       - startGroup: functions/groups/startGroup.md
       - endGroup: functions/groups/endGroup.md
+      - startClip: functions/groups/startClip.md
+      - endClip: functions/groups/endClip.md
       - startContainer: functions/groups/startContainer.md
       - endContainer: functions/groups/endContainer.md
     - Utils:
@@ -93,4 +109,10 @@ nav:
       - if: functions/utils/if.md
       - function: functions/utils/function.md
       - getErrors: functions/utils/getErrors.md
+      - getHex: functions/utils/getHex.md
+      - replace: functions/utils/replace.md
+      - length: functions/utils/length.md
+      - substring: functions/utils/substring.md
+      - join: functions/utils/join.md
+      - split: functions/utils/split.md
   - Examples: examples.md
