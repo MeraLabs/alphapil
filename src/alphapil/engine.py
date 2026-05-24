@@ -163,6 +163,11 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
         self.register_function("useImageAsCanvas", self._use_image_as_canvas)
         self.register_function("imageFilter", self._image_filter)
         self.register_function("clearImageCache", self.clear_image_cache)
+        self.register_function("drawPattern", self._draw_pattern)
+        self.register_function("rotate", self._rotate_canvas)
+        self.register_function("rotateCanvas", self._rotate_canvas)
+        self.register_function("rotateLayer", self._rotate_canvas)
+        self.register_function("adjustColor", self._adjust_color)
         
         # Utility functions from UtilsMixin
         self.register_function("math", self._math)

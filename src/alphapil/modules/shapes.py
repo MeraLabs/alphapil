@@ -27,7 +27,9 @@ class ShapesMixin(AlphaMixin):
 
     def _draw_rect(self, x: str, y: str, width: str, height: str, 
                    color: str = None, outline: str = None, fill: str = None, 
-                   outline_width: str = None, radius: str = "0", anchor: str = "lt") -> str:
+                   outline_width: str = None, radius: str = "0", anchor: str = "lt",
+                   shadow_color: str = None, shadow_offset: str = "0,0",
+                   glow_color: str = None, glow_radius: str = "0") -> str:
         try:
             self._ensure_canvas()
             w = self._parse_length(width, 'x')
@@ -55,6 +57,69 @@ class ShapesMixin(AlphaMixin):
                 outline_color = self._get_color(outline)
             elif lw > 0:
                 outline_color = self._get_color(self._get_state('stroke_color', 'black'))
+
+            # Parse shadow & glow
+            s_color = self._get_color(shadow_color) if shadow_color else None
+            g_color = self._get_color(glow_color) if glow_color else None
+            gr = int(self._parse_length(glow_radius, 'x')) if glow_radius else 0
+
+            # 1. Apply Glow Effect
+            if g_color and gr > 0:
+                from PIL import Image as _Image, ImageFilter, ImageDraw as _ImageDraw
+                gw, gh = int(w + gr*4), int(h + gr*4)
+                glow_img = _Image.new("RGBA", (gw, gh), (0, 0, 0, 0))
+                glow_draw = _ImageDraw.Draw(glow_img)
+                
+                temp_bbox = [(gr*2, gr*2), (gr*2 + w, gr*2 + h)]
+                
+                if r > 0 and hasattr(glow_draw, 'rounded_rectangle'):
+                    if outline_color:
+                        glow_draw.rounded_rectangle(temp_bbox, radius=r, fill=g_color, outline=g_color, width=lw+gr)
+                    else:
+                        glow_draw.rounded_rectangle(temp_bbox, radius=r, fill=g_color)
+                else:
+                    if outline_color:
+                        glow_draw.rectangle(temp_bbox, fill=g_color, outline=g_color, width=lw+gr)
+                    else:
+                        glow_draw.rectangle(temp_bbox, fill=g_color)
+                
+                glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
+                self.canvas.paste(glow_img, (int(x1 - gr*2), int(y1 - gr*2)), glow_img)
+
+            # 2. Apply Shadow Effect
+            if s_color:
+                raw_sx, raw_sy = self._parse_coords(shadow_offset) if shadow_offset else (0, 0)
+                sx, sy = self._s(raw_sx), self._s(raw_sy)
+                shadow_bbox = [(x1 + sx, y1 + sy), (x2 + sx, y2 + sy)]
+                
+                needs_shadow_composite = (len(s_color) == 4 and s_color[3] < 255)
+                if needs_shadow_composite:
+                    from PIL import Image as _Image, ImageDraw as _ImageDraw
+                    s_layer = _Image.new("RGBA", self.canvas.size, (0, 0, 0, 0))
+                    s_draw = _ImageDraw.Draw(s_layer)
+                    
+                    if r > 0 and hasattr(s_draw, 'rounded_rectangle'):
+                        if outline_color:
+                            s_draw.rounded_rectangle(shadow_bbox, radius=r, fill=s_color, outline=s_color, width=lw)
+                        else:
+                            s_draw.rounded_rectangle(shadow_bbox, radius=r, fill=s_color)
+                    else:
+                        if outline_color:
+                            s_draw.rectangle(shadow_bbox, fill=s_color, outline=s_color, width=lw)
+                        else:
+                            s_draw.rectangle(shadow_bbox, fill=s_color)
+                    self.canvas.alpha_composite(s_layer)
+                else:
+                    if r > 0 and hasattr(self.draw, 'rounded_rectangle'):
+                        if outline_color:
+                            self.draw.rounded_rectangle(shadow_bbox, radius=r, fill=s_color, outline=s_color, width=lw)
+                        else:
+                            self.draw.rounded_rectangle(shadow_bbox, radius=r, fill=s_color)
+                    else:
+                        if outline_color:
+                            self.draw.rectangle(shadow_bbox, fill=s_color, outline=s_color, width=lw)
+                        else:
+                            self.draw.rectangle(shadow_bbox, fill=s_color)
 
             # When fill has alpha < 255, draw on a temporary layer and
             # alpha_composite back. Pillow's ImageDraw replaces pixels
@@ -86,25 +151,31 @@ class ShapesMixin(AlphaMixin):
 
             return f"Rectangle drawn at ({x1}, {y1}) size {w}x{h}" + (f" with radius {r}" if r > 0 else "")
         except ValueError as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawRect[x;y;width;height;color;outline;fill;outline_width;radius;anchor]")
+            raise ValueError(f"{e}\nProper Syntax: $drawRect[x;y;width;height;color;outline;fill;outline_width;radius;anchor;shadow_color;shadow_offset;glow_color;glow_radius]")
 
     def _draw_rounded_rect(self, x: str, y: str, width: str, height: str, radius: str = "10",
                            color: str = None, outline: str = None, fill: str = None,
-                           outline_width: str = None, anchor: str = "lt") -> str:
+                           outline_width: str = None, anchor: str = "lt",
+                           shadow_color: str = None, shadow_offset: str = "0,0",
+                           glow_color: str = None, glow_radius: str = "0") -> str:
         """
         Draw a rounded rectangle with specific parameter order from docs.
         """
         try:
             return self._draw_rect(x=x, y=y, width=width, height=height, radius=radius,
                                   color=color, outline=outline, fill=fill,
-                                  outline_width=outline_width, anchor=anchor)
+                                  outline_width=outline_width, anchor=anchor,
+                                  shadow_color=shadow_color, shadow_offset=shadow_offset,
+                                  glow_color=glow_color, glow_radius=glow_radius)
         except ValueError as e:
             # Re-raise with specific syntax for rounded rect if it fails
-            raise ValueError(f"{str(e).split('\n')[0]}\nProper Syntax: $drawRoundedRect[x;y;width;height;radius;color;outline;fill;outline_width;anchor]")
+            raise ValueError(f"{str(e).split('\n')[0]}\nProper Syntax: $drawRoundedRect[x;y;width;height;radius;color;outline;fill;outline_width;anchor;shadow_color;shadow_offset;glow_color;glow_radius]")
 
     def _draw_circle(self, cx: str, cy: str, radius: str, 
                      color: str = None, outline: str = None, fill: str = None,
-                     outline_width: str = None, anchor: str = "mm") -> str:
+                     outline_width: str = None, anchor: str = "mm",
+                     shadow_color: str = None, shadow_offset: str = "0,0",
+                     glow_color: str = None, glow_radius: str = "0") -> str:
         try:
             self._ensure_canvas()
             r = self._parse_length(radius, 'x')
@@ -139,6 +210,40 @@ class ShapesMixin(AlphaMixin):
             elif lw > 0:
                 outline_color = self._get_color(self._get_state('stroke_color', 'black'))
 
+            # Parse shadow & glow
+            s_color = self._get_color(shadow_color) if shadow_color else None
+            g_color = self._get_color(glow_color) if glow_color else None
+            g_rad = int(self._parse_length(glow_radius, 'x')) if glow_radius else 0
+
+            # 1. Apply Glow Effect
+            if g_color and g_rad > 0:
+                from PIL import Image as _Image, ImageFilter, ImageDraw as _ImageDraw
+                gw, gh = int(w + g_rad*4), int(h + g_rad*4)
+                glow_img = _Image.new("RGBA", (gw, gh), (0, 0, 0, 0))
+                glow_draw = _ImageDraw.Draw(glow_img)
+                
+                temp_bbox = [(g_rad*2, g_rad*2), (g_rad*2 + w, g_rad*2 + h)]
+                
+                if outline_color:
+                    glow_draw.ellipse(temp_bbox, fill=g_color, outline=g_color, width=lw+g_rad)
+                else:
+                    glow_draw.ellipse(temp_bbox, fill=g_color)
+                
+                glow_img = glow_img.filter(ImageFilter.GaussianBlur(g_rad))
+                self.canvas.paste(glow_img, (int(left - g_rad*2), int(top - g_rad*2)), glow_img)
+
+            # 2. Apply Shadow Effect
+            if s_color:
+                raw_sx, raw_sy = self._parse_coords(shadow_offset) if shadow_offset else (0, 0)
+                sx, sy = self._s(raw_sx), self._s(raw_sy)
+                shadow_bbox = [(left + sx, top + sy), (right + sx, bottom + sy)]
+                
+                if outline_color:
+                    self.draw.ellipse(shadow_bbox, fill=s_color, outline=s_color, width=lw)
+                else:
+                    self.draw.ellipse(shadow_bbox, fill=s_color)
+
+            # Draw main circle
             if outline_color:
                 self.draw.ellipse(bbox, fill=fill_color, outline=outline_color, width=lw)
             else:
@@ -146,7 +251,7 @@ class ShapesMixin(AlphaMixin):
 
             return f"Circle drawn at ({x_pos+r}, {y_pos+r}) with radius {r}"
         except ValueError as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawCircle[cx;cy;radius;color;outline;fill;outline_width;anchor]")
+            raise ValueError(f"{e}\nProper Syntax: $drawCircle[cx;cy;radius;color;outline;fill;outline_width;anchor;shadow_color;shadow_offset;glow_color;glow_radius]")
 
     def _draw_line(self, x1: str, y1: str, x2: str, y2: str, 
                    color: str = None, width: str = None) -> str:

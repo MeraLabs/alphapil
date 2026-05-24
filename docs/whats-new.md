@@ -4,6 +4,21 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 24, 2026 (v0.2.4)
+!!! abstract "Feature Release: Rotation, Color Enhancements & Shape Shadows/Glows"
+    This update adds powerful creative control to AlphaPIL: rotate the canvas or active layers, adjust image qualities (brightness, contrast, saturation) dynamically, generate background patterns, and apply drop shadows and outer glow effects natively to shapes. Additionally, redundant text helper functions were cleaned up.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🔄 Rotation** | **Canvas & Layer Rotation** | Added `$rotate` to rotate the active layer or canvas by any angle. | [Docs](functions/images/rotate.md) |
+    | **🎨 Enhancements** | **Color Adjustment** | Added `$adjustColor` for brightness, contrast, and saturation. | [Docs](functions/images/adjustColor.md) |
+    | **🏁 Patterns** | **Pattern Drawing** | Added `$drawPattern` for background dots, lines, and grids. | [Docs](functions/images/drawPattern.md) |
+    | **🔆 Shadows & Glows** | **Shape Effects** | Integrated shadows & glows directly into `$drawRect`, `$drawCircle`, and `$drawRoundedRect`. | [Docs](functions/geometric/drawRect.md) |
+    | **🧹 Clean-up** | **Redundant Helpers** | Deprecated and removed unused text stroke/gradient helper functions. | [Docs](functions/text/drawText.md) |
+    | **🤖 AI** | **Manifest v0.2.4** | Synchronized technical manifest with all new shapes parameters and commands. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 17, 2026 (v0.2.3)
 !!! abstract "Major Feature Update: High-DPI Rendering & Chart Quality"
     This update introduces a robust post-processing pipeline for crystal-clear image exports at retina/High-DPI resolutions, alongside significant readability improvements for charts.

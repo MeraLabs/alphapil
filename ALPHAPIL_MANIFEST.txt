@@ -1,4 +1,4 @@
-ALPHAPIL TECHNICAL MANIFEST (V0.2.3)
+ALPHAPIL TECHNICAL MANIFEST (V0.2.4)
 ====================================
 Guide for AI Agents to write professional AlphaPIL templates.
 
@@ -38,9 +38,9 @@ $startClip[x;y;w;h;radius] | $endClip[]
 $getSystemFonts[] | $getErrors[] | $getBytes[format]
 
 --- SHAPES ---
-$drawRect[x;y;w;h;color;outline;fill;lw;radius;anchor]
-$drawCircle[cx;cy;radius;color;outline;fill;lw;anchor]
-$drawRoundedRect[x;y;w;h;radius;color;outline;fill;lw;anchor]
+$drawRect[x;y;w;h;color;outline;fill;lw;radius;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
+$drawCircle[cx;cy;radius;color;outline;fill;lw;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
+$drawRoundedRect[x;y;w;h;radius;color;outline;fill;lw;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
 $drawLine[x1;y1;x2;y2;color;width]
 $drawPolygon[points;color;outline;fill;lw] (points: x1,y1,x2,y2)
 $drawTriangle[x1;y1;x2;y2;x3;y3;color;outline;fill;lw]
@@ -57,10 +57,10 @@ $wrapText[text;width;size;font] | $autoSizeText[text;max_width;start;min;font] |
 
 --- IMAGES & EFFECTS ---
 $drawImage[x;y;path;w;h;opacity;radius;circle;anchor]
-$useImageAsCanvas[path;h_var;w_var;fixed_w;fixed_h] | $clearImageCache[]
+$useImageAsCanvas[path;h_var;w_var;fixed_w;fixed_h] | $clearImageCache[] | $drawPattern[x;y;w;h;type;color]
 $drawLinearGradient[x;y;w;h;stops;angle] (stops: "color,0;color,1")
 $drawRadialGradient[cx;cy;r;stops]
-$blur[radius;x;y;w;h] (Region blur for Glassmorphism)
+$blur[radius;x;y;w;h] | $rotate[angle;expand] | $adjustColor[brightness;contrast;saturation]
 
 --- MASKING & LAYERS ---
 $createLayer[name] | $switchLayer[name] | $mergeLayer[name;x;y;opacity;target] | $applyMask[mask_path;x;y;invert]

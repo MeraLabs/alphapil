@@ -251,3 +251,99 @@ class EffectsMixin(AlphaMixin):
             return f"{pattern_type} pattern drawn at ({start_x}, {start_y})"
         except ValueError as e:
             raise ValueError(f"Invalid pattern parameters: {e}")
+
+    def _rotate_canvas(self, angle: str, expand: str = "false") -> str:
+        """
+        Rotate the current canvas (or active layer) by a given angle in degrees counter-clockwise.
+        
+        Args:
+            angle: Angle of rotation in degrees
+            expand: "true" to expand canvas size to fit the rotated image, "false" to keep same size
+            
+        Returns:
+            Confirmation message
+        """
+        self._ensure_canvas()
+        try:
+            from PIL import Image, ImageDraw
+            
+            rot_angle = float(self._parse_num(angle))
+            should_expand = str(expand).lower() in ['true', '1', 'yes', 'on']
+            
+            # Determine target layer or canvas
+            target_img = self.canvas
+            is_layer = False
+            if hasattr(self, '_current_layer_name') and self._current_layer_name and self._current_layer_name in self._layers:
+                target_img = self._layers[self._current_layer_name]
+                is_layer = True
+                
+            # Perform rotation with BICUBIC resampling for crisp details
+            rotated = target_img.rotate(rot_angle, resample=Image.Resampling.BICUBIC, expand=should_expand)
+            
+            if not is_layer:
+                self.canvas = rotated
+                self.canvas_size = self.canvas.size
+                self.draw = ImageDraw.Draw(self.canvas)
+            else:
+                self._layers[self._current_layer_name] = rotated
+                self.draw = ImageDraw.Draw(rotated)
+                
+            return f"Rotated canvas by {rot_angle} degrees"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $rotate[angle;expand]")
+
+    def _adjust_color(self, brightness: str = "1.0", contrast: str = "1.0", saturation: str = "1.0") -> str:
+        """
+        Adjust the brightness, contrast, or saturation/color of the current active layer or canvas.
+        Values: 1.0 is original, <1.0 decreases, >1.0 increases.
+        
+        Args:
+            brightness: Brightness multiplier (default: 1.0)
+            contrast: Contrast multiplier (default: 1.0)
+            saturation: Saturation multiplier (default: 1.0)
+            
+        Returns:
+            Confirmation message
+        """
+        self._ensure_canvas()
+        try:
+            from PIL import ImageEnhance, ImageDraw
+            
+            b_val = float(self._parse_num(brightness)) if brightness else 1.0
+            c_val = float(self._parse_num(contrast)) if contrast else 1.0
+            s_val = float(self._parse_num(saturation)) if saturation else 1.0
+            
+            # Determine target layer or canvas
+            target_img = self.canvas
+            is_layer = False
+            if hasattr(self, '_current_layer_name') and self._current_layer_name and self._current_layer_name in self._layers:
+                target_img = self._layers[self._current_layer_name]
+                is_layer = True
+                
+            img = target_img
+            
+            # 1. Saturation (Color)
+            if s_val != 1.0:
+                enhancer = ImageEnhance.Color(img)
+                img = enhancer.enhance(s_val)
+                
+            # 2. Brightness
+            if b_val != 1.0:
+                enhancer = ImageEnhance.Brightness(img)
+                img = enhancer.enhance(b_val)
+                
+            # 3. Contrast
+            if c_val != 1.0:
+                enhancer = ImageEnhance.Contrast(img)
+                img = enhancer.enhance(c_val)
+                
+            if not is_layer:
+                self.canvas = img
+                self.draw = ImageDraw.Draw(self.canvas)
+            else:
+                self._layers[self._current_layer_name] = img
+                self.draw = ImageDraw.Draw(img)
+                
+            return "Adjusted image colors"
+        except Exception as e:
+            raise ValueError(f"{e}\nProper Syntax: $adjustColor[brightness;contrast;saturation]")

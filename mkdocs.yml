@@ -67,8 +67,6 @@ nav:
     - Text:
       - Overview: functions/text.md
       - drawText: functions/text/drawText.md
-      - drawTextStroke: functions/text/drawTextStroke.md
-      - drawTextGradient: functions/text/drawTextGradient.md
       - drawTextMid: functions/text/drawTextMid.md
       - drawTextIn: functions/text/drawTextIn.md
       - toUpper: functions/text/toUpper.md
@@ -84,6 +82,9 @@ nav:
       - useImageAsCanvas: functions/images/useImageAsCanvas.md
       - imageFilter: functions/images/imageFilter.md
       - clearImageCache: functions/images/clearImageCache.md
+      - drawPattern: functions/images/drawPattern.md
+      - rotate: functions/images/rotate.md
+      - adjustColor: functions/images/adjustColor.md
       - drawLinearGradient: functions/images/drawLinearGradient.md
       - drawRadialGradient: functions/images/drawRadialGradient.md
       - blur: functions/images/blur.md
