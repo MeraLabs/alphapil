@@ -1,7 +1,7 @@
 # Requirements for AlphaPIL Developer Tools
 
 # For live previewer
-watchdog>=2.1.0
+watchdog>=6.0.0
 
 # For documentation generation (built-in)
 # ast - built-in
