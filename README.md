@@ -77,6 +77,27 @@ $applyMask[mask]
 """
 ```
 
+### 🎯 Interactive Coordinate Picker
+To make designing templates easier, AlphaPIL comes with a premium **Interactive Coordinate Picker Web GUI**! 
+* Hover your mouse to see precise pixel coordinates in real-time with an alignment reticle.
+* Click anywhere on the image to copy coordinates (formatted as `x;y` ready for pasting into your templates).
+* Drag and drop other generated images directly to inspect them.
+
+#### Option A: Open from Terminal (CLI)
+Once installed, you can launch the picker directly from your command line:
+```bash
+alphapil-picker output.png
+```
+
+#### Option B: Launch from Python Script
+You can open the picker directly from your Python rendering script:
+```python
+from alphapil import open_coordinate_picker
+
+# Instantly opens your browser displaying output.png
+open_coordinate_picker("output.png")
+```
+
 ### Support
 Need help? Join our official Discord community for support and updates!
 **[Join MeraLabs Discord](https://discord.gg/AXbuM6aaeQ)**

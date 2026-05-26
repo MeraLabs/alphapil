@@ -5,12 +5,13 @@ This package provides a powerful recursive parser for handling nested functions
 in image generation templates, with support for asynchronous operations.
 """
 
-__version__ = "0.2.7"
+__version__ = "0.2.8"
 __author__ = "MeraLabs"
 
 from .engine import CanvasEngine
 from .interpreter import CanvasInterpreter
 from .modules import AlphaMixin, ShapesMixin, TextMixin, ImagesMixin, UtilsMixin, MaskingMixin
+from .picker import open_picker as open_coordinate_picker
 
 __all__ = [
     "CanvasEngine", 
@@ -20,5 +21,6 @@ __all__ = [
     "TextMixin", 
     "ImagesMixin",
     "UtilsMixin",
-    "MaskingMixin"
+    "MaskingMixin",
+    "open_coordinate_picker"
 ]

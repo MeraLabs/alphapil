@@ -358,3 +358,10 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             self._image_cache.clear()
             
     # State management is now handled via AlphaMixin _cmd_* methods
+
+    def open_coordinate_picker(self, image_path: str) -> bool:
+        """
+        Open the interactive coordinate picker webpage for the specified image.
+        """
+        from .picker import open_picker
+        return open_picker(image_path)
