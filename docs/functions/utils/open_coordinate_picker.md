@@ -58,7 +58,13 @@ engine.open_coordinate_picker("output.png")
 
 ## Features
 
-- **Real-Time Crosshair Reticles**: Moving the mouse over the image displays real-time crosshair guides matching the cursor position.
-- **Perfect Scale Tracking**: Coordinates are calculated relative to the *original natural dimensions* of the image, even when the browser or HTML canvas scales the image visually.
-- **Single-Click Copy**: Clicking anywhere on the image copies the coordinates directly to your clipboard in the format `X;Y` (semicolon separated), which is standard for AlphaPIL templates.
-- **Dynamic File Drag-and-Drop**: You can drag and drop any local image or use the browse card to switch files instantly without restarting the server.
+- **🎯 WYSIWYG Interactive Designer**: Click and drag directly on your canvas to visually draw bounding boxes, circles, rounded rectangles, lines, and text.
+- **🔤 Real-Time Client-Side Simulation**:
+  - `drawTextMid` Centering & Truncation: Centered text box alignment that dynamically clips overflowing text and appends `...` natively inside the browser context.
+  - `drawTextIn` Decremental Scaling: Automatically estimates and reduces the active font size step-by-step to fit text entirely within your visually drawn bounds.
+- **📚 Multi-Element Composition**: Customize fill colors, outlines, stroke widths, corner radii, and custom paths. Move layers up/down or delete them dynamically.
+- **💾 Complete Template Export**: Instantly copy individual command snippets or export the **entire composed multi-line AlphaPIL template code block** to paste directly into your generator.
+- **🎯 Real-Time Crosshair Reticles**: Live pixel-precise crosshair reticles overlaying the canvas.
+- **🔍 Perfect Scale Tracking**: Mouse interactions are automatically translated to coordinate spaces relative to the *original, natural dimensions* of the background image, regardless of browser scaling.
+- **📁 Dynamic Background Drag-and-Drop**: Easily drag and drop any image or browse to swap canvas backgrounds without restarting the local HTTP server.
+

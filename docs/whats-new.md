@@ -4,6 +4,20 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 26, 2026 (v0.2.9)
+!!! abstract "Feature Release: Interactive WYSIWYG Visual Template Designer"
+    This release upgrades the coordinate picker into a fully fledged visual designer! You can now visually draw text bounding boxes, rectangles, circles, rounded rectangles, and lines directly over your image, manage layering/composition, see live client-side rendering simulations, and instantly copy single snippets or complete multi-line AlphaPIL template code block compositions.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🎨 Designer** | **Visual Builder** | Added drawing overlay canvas for real-time visual design and layout modeling. | [Docs](functions/utils/open_coordinate_picker.md) |
+    | **🔤 Simulation** | **Text Simulations** | Replicated `drawTextMid` truncation and `drawTextIn` auto-scaling inside the browser. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **📚 Composition** | **Layer Management** | Drag to draw, reorder indices, delete layers, and visual composition stack. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **💾 Code Export** | **Template Generator** | Instantly export active single-command snippets or entire composed layout templates. | [Docs](functions/functions/utils/open_coordinate_picker.md) |
+    | **🤖 AI** | **Manifest v0.2.9** | Synchronized technical manifest version with the new WYSIWYG Visual Designer. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 26, 2026 (v0.2.8)
 !!! abstract "Feature Release: Interactive Web Coordinate Picker"
     This release introduces a premium, self-contained interactive coordinate picker to visually inspect and retrieve pixel coordinates on rendered images. It features real-time crosshair guides, perfect scaling calculation relative to original image dimensions, drag-and-drop file loading, and one-click coordinate clipboard copying.
