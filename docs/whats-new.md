@@ -4,15 +4,16 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
-## May 26, 2026 (v0.3.1)
-!!! abstract "Patch Release: Visual IDE Text Alignment & Integration"
-    This release fixes a critical f-string NameError in the visual coordinate picker and integrates the advanced text formatting tools ($drawTextMid, $drawTextIn) directly into the WYSIWYG Visual Template IDE toolbar.
+## May 26, 2026 (v0.3.2)
+!!! abstract "Patch Release: Visual IDE Scroll Layout & Renaming Integration"
+    This release fixes a critical flexbox scroll container layout centering bug where the top part of the image got cut off in the visual template designer. It also renames the generated HTML visualizer tool to `alphapil_ide_visualizer.html` to match its power as a full IDE & Visualizer, and integrates advanced text alignment tools ($drawTextMid, $drawTextIn).
 
     | Feature | Change | Description | Link |
     | :--- | :--- | :--- | :--- |
-    | **🐛 Fix** | **f-string NameError** | Fixed f-string compile/runtime variable resolution errors in picker tool. | [Docs](functions/utils/open_coordinate_picker.md) |
+    | **📏 UI Fix** | **Safe Centering Scroll** | Implemented scroll-safe centering for the editor canvas to prevent top/left image cropping. | [Docs](functions/utils/open_coordinate_picker.md) |
+    | **📛 Renaming** | **alphapil_ide_visualizer** | Renamed the visual template editor HTML output to reflect its full Visual IDE capabilities. | [Docs](functions/utils/open_coordinate_picker.md#features) |
     | **🔤 IDE Toolbar** | **Text Alignment Controls** | Exposed `$drawTextMid` (auto-truncation) and `$drawTextIn` (auto-scaling) directly in the Designer sidebar. | [Docs](functions/utils/open_coordinate_picker.md#features) |
-    | **🤖 AI** | **Manifest v0.3.1** | Synchronized technical manifest version with the new f-string fixes and toolbar enhancements. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🤖 AI** | **Manifest v0.3.2** | Synchronized technical manifest version with the new f-string fixes, layout enhancements, and toolbar additions. | [Manifest](ALPHAPIL_MANIFEST.txt) |
 
 ---
 
