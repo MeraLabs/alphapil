@@ -1,4 +1,4 @@
-ALPHAPIL TECHNICAL MANIFEST (V0.3.0)
+ALPHAPIL TECHNICAL MANIFEST (V0.3.1)
 ====================================
 Guide for AI Agents to write professional AlphaPIL templates.
 

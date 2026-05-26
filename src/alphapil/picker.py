@@ -555,6 +555,14 @@ def generate_html(image_path, server_root, output_dir):
                         <span class="tool-icon">🔤</span>
                         <span>Text</span>
                     </button>
+                    <button class="tool-btn" onclick="setTool('drawTextMid')">
+                        <span class="tool-icon">↔️</span>
+                        <span>TextMid</span>
+                    </button>
+                    <button class="tool-btn" onclick="setTool('drawTextIn')">
+                        <span class="tool-icon">↕️</span>
+                        <span>TextIn</span>
+                    </button>
                     <button class="tool-btn" onclick="setTool('drawRect')">
                         <span class="tool-icon">🟩</span>
                         <span>Rect</span>
@@ -621,8 +629,8 @@ def generate_html(image_path, server_root, output_dir):
                 <!-- Text Configurations -->
                 <div id="settings-group-text" style="display: none;">
                     <div class="input-group">
-                        <label class="input-label">Text Content (Supports {user} variable placeholders)</label>
-                        <input type="text" class="input-field" id="ctrl-text-content" value="Welcome {user}" oninput="updateActiveElement()">
+                        <label class="input-label">Text Content (Supports {{user}} variable placeholders)</label>
+                        <input type="text" class="input-field" id="ctrl-text-content" value="Welcome {{user}}" oninput="updateActiveElement()">
                     </div>
                     <div class="inline-inputs">
                         <div class="input-group">
@@ -905,7 +913,7 @@ def generate_html(image_path, server_root, output_dir):
         // Variable interpolation solver
         function resolveVars(str) {{
             if (typeof str !== 'string') return str;
-            // Solve {variable} replacements
+            // Solve {{variable}} replacements
             return str.replace(/\\{{(\\w+)\\}}/g, (match, name) => {{
                 return mockVariables[name] !== undefined ? mockVariables[name] : match;
             }});

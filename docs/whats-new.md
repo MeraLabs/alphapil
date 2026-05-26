@@ -4,6 +4,18 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 26, 2026 (v0.3.1)
+!!! abstract "Patch Release: Visual IDE Text Alignment & Integration"
+    This release fixes a critical f-string NameError in the visual coordinate picker and integrates the advanced text formatting tools ($drawTextMid, $drawTextIn) directly into the WYSIWYG Visual Template IDE toolbar.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🐛 Fix** | **f-string NameError** | Fixed f-string compile/runtime variable resolution errors in picker tool. | [Docs](functions/utils/open_coordinate_picker.md) |
+    | **🔤 IDE Toolbar** | **Text Alignment Controls** | Exposed `$drawTextMid` (auto-truncation) and `$drawTextIn` (auto-scaling) directly in the Designer sidebar. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **🤖 AI** | **Manifest v0.3.1** | Synchronized technical manifest version with the new f-string fixes and toolbar enhancements. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 26, 2026 (v0.3.0)
 !!! abstract "Feature Release: Interactive WYSIWYG Visual Template IDE"
     This major release upgrades the Visual Designer into a fully featured template IDE! You can now import existing AlphaPIL code via reverse-parsing, inspect and render actual local system fonts, test dynamic layouts with mock variable interpolation (`{user}` placeholders), sketch multi-stop linear/radial gradients, resize canvas dimensions, and visually compose advanced charts & graphs ($drawBarChart, $drawLineChart, $drawProgressBar) with live rendering simulations.
