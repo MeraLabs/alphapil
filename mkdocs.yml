@@ -116,4 +116,5 @@ nav:
       - substring: functions/utils/substring.md
       - join: functions/utils/join.md
       - split: functions/utils/split.md
+      - open_coordinate_picker: functions/utils/open_coordinate_picker.md
   - Examples: examples.md

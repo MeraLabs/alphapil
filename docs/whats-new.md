@@ -4,6 +4,19 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 26, 2026 (v0.2.8)
+!!! abstract "Feature Release: Interactive Web Coordinate Picker"
+    This release introduces a premium, self-contained interactive coordinate picker to visually inspect and retrieve pixel coordinates on rendered images. It features real-time crosshair guides, perfect scaling calculation relative to original image dimensions, drag-and-drop file loading, and one-click coordinate clipboard copying.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🎯 Coordinator** | **Web GUI Picker** | Introduced a self-contained Web GUI coordinate picker with live reticle crosshairs. | [Docs](functions/utils/open_coordinate_picker.md) |
+    | **💻 CLI** | **alphapil-picker** | Added `alphapil-picker` command line entry point to run picker on local images. | [Docs](functions/utils/open_coordinate_picker.md#command-line-interface-cli) |
+    | **🐍 Python API** | **open_coordinate_picker** | Added programmatic APIs `open_coordinate_picker` and `CanvasEngine.open_coordinate_picker`. | [Docs](functions/utils/open_coordinate_picker.md#python-programmatic-api) |
+    | **🤖 AI** | **Manifest v0.2.8** | Synchronized technical manifest with version 0.2.8 and documented the Picker. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 26, 2026 (v0.2.7)
 !!! abstract "Feature Release: Perfect Box Alignment & Auto-Sizing Text"
     This release completely updates `$drawTextMid` and `$drawTextIn` to follow professional box layout standards: `$drawTextMid` automatically truncates text to fit between bounds, and `$drawTextIn` automatically scales down font size step-by-step to fit completely inside a box without truncation.
