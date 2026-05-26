@@ -1,4 +1,4 @@
-ALPHAPIL TECHNICAL MANIFEST (V0.2.6)
+ALPHAPIL TECHNICAL MANIFEST (V0.2.7)
 ====================================
 Guide for AI Agents to write professional AlphaPIL templates.
 
@@ -51,7 +51,9 @@ $drawArc[x;y;w;h;start;end;color;width]
 $drawText[x;y;text;color;size;font;anchor;sw;sf;shadow_c;shadow_off;glow_c;glow_r;max_w;trunc_w;grad;line_h;tracking;variation]
 - line_h: Line spacing multiplier (e.g. 1.2)
 - tracking: Letter spacing in pixels.
-$drawTextMid[x1;y1;x2;y2;text;...] | $drawTextIn[x;y;w;h;text;...]
+$drawTextMid[x1;y1;x2;y2;text;color;size;font;sw;sf;sc;soff;gc;gr;variation] | $drawTextIn[x1;y1;x2;y2;text;color;size;font;sw;sf;sc;soff;gc;gr;variation]
+- $drawTextMid: Centers text between (x1,y1) and (x2,y2); auto-truncates with ... if text exceeds the available width.
+- $drawTextIn: Fits text in the box (x1,y1) to (x2,y2); auto-scales down the font size if text exceeds the box dimensions.
 $toUpper[text] | $toLower[text] | $toTitle[text] | $measureText[text;size;font]
 $wrapText[text;width;size;font] | $autoSizeText[text;max_width;start;min;font] | $truncateText[text;width;size;font;suffix]
 

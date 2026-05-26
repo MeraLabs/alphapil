@@ -4,6 +4,18 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 26, 2026 (v0.2.7)
+!!! abstract "Feature Release: Perfect Box Alignment & Auto-Sizing Text"
+    This release completely updates `$drawTextMid` and `$drawTextIn` to follow professional box layout standards: `$drawTextMid` automatically truncates text to fit between bounds, and `$drawTextIn` automatically scales down font size step-by-step to fit completely inside a box without truncation.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🔤 Layout** | **Auto-Truncation** | Updated `$drawTextMid` to automatically truncate text with `...` if it exceeds the horizontal boundaries (`x2 - x1`). | [Docs](functions/text/drawTextMid.md) |
+    | **🎯 Layout** | **Auto-Sizing** | Updated `$drawTextIn` to dynamically scale down the font size until the text fits perfectly within the bounding box (`x1, y1` to `x2, y2`). | [Docs](functions/text/drawTextIn.md) |
+    | **🤖 AI** | **Manifest v0.2.7** | Synchronized technical manifest with the package version 0.2.7. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 26, 2026 (v0.2.6)
 !!! abstract "Feature Release: Variable Fonts Support"
     This release introduces native support for OpenType variable fonts, giving you dynamic control over font weights, widths, slants, and custom variations directly in your templates.

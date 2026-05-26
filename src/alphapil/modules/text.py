@@ -455,79 +455,108 @@ class TextMixin(AlphaMixin):
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $truncateText[text;width;size;font;suffix]")
 
-    def _draw_text_mid(self, x1: str = None, y1: str = None, 
-                        x2: str = None, y2: str = None, 
-                        text: str = "", 
-                        color: str = None, 
+    def _draw_text_mid(self, x1: str, y1: str, x2: str, y2: str, 
+                        text: str, color: str = None, 
                         size: str = None, font: str = None, 
                         stroke_width: str = None, stroke_fill: str = None,
                         shadow_color: str = None, shadow_offset: str = "0,0",
                         glow_color: str = None, glow_radius: str = "0",
-                        x: str = None, y: str = None,
-                        w: str = None, h: str = None,
-                        max_width: str = None, truncate_width: str = None) -> str:
+                        variation: str = None) -> str:
         """
-        Multifunctional centering function with wrap/truncate support.
-        - Centers horizontally if (x1, x2) are provided.
-        - Centers vertically if (y1, y2) are provided.
-        - If w or h are provided, calculates x2=x+w or y2=y+h automatically.
-        - Supports all standard text effects and transformations.
+        Draw text centered between two X coordinates (x1, x2) and two Y coordinates (y1, y2).
+        If the text width exceeds the available width (x2 - x1), it automatically truncates the text.
         """
         self._ensure_canvas()
         try:
-            # Horizontal logic
-            if x1 is not None and x2 is not None:
-                xm = f"mid({x1},{x2})"
-            elif x is not None and w is not None:
-                xm = f"mid({x},{x}+{w})"
-            elif x is not None:
-                xm = x
-            elif x1 is not None:
-                xm = x1
-            else:
-                xm = "center"
-
-            # Vertical logic
-            if y1 is not None and y2 is not None:
-                ym = f"mid({y1},{y2})"
-            elif y is not None and h is not None:
-                ym = f"mid({y},{y}+{h})"
-            elif y is not None:
-                ym = y
-            elif y1 is not None:
-                ym = y1
-            else:
-                ym = "middle"
-
-            return self._draw_text(xm, ym, text, color, size, font, "mm", 
-                                  stroke_width, stroke_fill, 
-                                  shadow_color, shadow_offset, 
-                                  glow_color, glow_radius,
-                                  max_width, truncate_width)
+            x1_val = self._parse_position(x1, 'x')
+            x2_val = self._parse_position(x2, 'x')
+            y1_val = self._parse_position(y1, 'y')
+            y2_val = self._parse_position(y2, 'y')
+            
+            bx1 = min(x1_val, x2_val)
+            bx2 = max(x1_val, x2_val)
+            by1 = min(y1_val, y2_val)
+            by2 = max(y1_val, y2_val)
+            
+            # Midpoint
+            xm_pos = (bx1 + bx2) / 2
+            ym_pos = (by1 + by2) / 2
+            
+            # Convert to logical coordinates for _draw_text
+            xm = str(xm_pos / self._s(1))
+            ym = str(ym_pos / self._s(1))
+            
+            # Calculate maximum available width and truncate if it exceeds
+            max_w = bx2 - bx1
+            logical_max_w = max_w / self._s(1)
+            
+            return self._draw_text(x=xm, y=ym, text=text, color=color, 
+                                   size=size, font=font, anchor="mm",
+                                   stroke_width=stroke_width, stroke_fill=stroke_fill,
+                                   shadow_color=shadow_color, shadow_offset=shadow_offset,
+                                   glow_color=glow_color, glow_radius=glow_radius,
+                                   truncate_width=str(logical_max_w), variation=variation)
         except Exception as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;x;y;w;h;max_width;truncate_width]")
+            raise ValueError(f"{e}\nProper Syntax: $drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;variation]")
 
-    def _draw_text_in(self, x: str = None, y: str = None, w: str = None, h: str = None, 
-                      text: str = "", color: str = None, 
+    def _draw_text_in(self, x1: str, y1: str, x2: str, y2: str, 
+                      text: str, color: str = None, 
                       size: str = None, font: str = None, 
                       stroke_width: str = None, stroke_fill: str = None,
                       shadow_color: str = None, shadow_offset: str = "0,0",
                       glow_color: str = None, glow_radius: str = "0",
-                      x1: str = None, x2: str = None, y1: str = None, y2: str = None,
-                      max_width: str = None, truncate_width: str = None) -> str:
+                      variation: str = None) -> str:
         """
-        Alias for _draw_text_mid but optimized for box dimensions (x, y, w, h).
+        Draw text fitted inside a bounding box (x1, y1, x2, y2).
+        If the text exceeds the box dimensions, it automatically scales down the font size until it fits.
         """
+        self._ensure_canvas()
         try:
-            return self._draw_text_mid(x1=x1, y1=y1, x2=x2, y2=y2, text=text, 
-                                     color=color, size=size, font=font, 
-                                     stroke_width=stroke_width, stroke_fill=stroke_fill,
-                                     shadow_color=shadow_color, shadow_offset=shadow_offset,
-                                     glow_color=glow_color, glow_radius=glow_radius,
-                                     x=x, y=y, w=w, h=h,
-                                     max_width=max_width, truncate_width=truncate_width)
+            x1_val = self._parse_position(x1, 'x')
+            x2_val = self._parse_position(x2, 'x')
+            y1_val = self._parse_position(y1, 'y')
+            y2_val = self._parse_position(y2, 'y')
+            
+            bx1 = min(x1_val, x2_val)
+            bx2 = max(x1_val, x2_val)
+            by1 = min(y1_val, y2_val)
+            by2 = max(y1_val, y2_val)
+            
+            box_w = bx2 - bx1
+            box_h = by2 - by1
+            
+            # Start with the requested font size
+            requested_size = float(self._parse_num(size or "24"))
+            current_size = requested_size
+            
+            sw_val = int(self._s(self._parse_num(stroke_width or "0")))
+            
+            # Loop to find the perfect font size that fits the bounding box
+            while current_size > 2:
+                font_obj = self._get_font(str(current_size), font, variation)
+                bbox = self.draw.textbbox((0, 0), text, font=font_obj, stroke_width=sw_val)
+                text_w = bbox[2] - bbox[0]
+                text_h = bbox[3] - bbox[1]
+                
+                if text_w <= box_w and text_h <= box_h:
+                    break
+                current_size -= 1
+                
+            # Midpoint of the box
+            xm_pos = (bx1 + bx2) / 2
+            ym_pos = (by1 + by2) / 2
+            
+            xm = str(xm_pos / self._s(1))
+            ym = str(ym_pos / self._s(1))
+            
+            return self._draw_text(x=xm, y=ym, text=text, color=color, 
+                                   size=str(current_size), font=font, anchor="mm",
+                                   stroke_width=stroke_width, stroke_fill=stroke_fill,
+                                   shadow_color=shadow_color, shadow_offset=shadow_offset,
+                                   glow_color=glow_color, glow_radius=glow_radius,
+                                   variation=variation)
         except Exception as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawTextIn[x;y;w;h;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;x1;x2;y1;y2;max_width;truncate_width]")
+            raise ValueError(f"{e}\nProper Syntax: $drawTextIn[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;variation]")
 
     # Note: _draw_text_center and _draw_text_wrapped are now logically covered 
     # by _draw_text and _draw_text_mid with parameters.
