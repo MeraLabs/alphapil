@@ -270,9 +270,21 @@ class ImagesMixin(AlphaMixin):
             # Load image (Async)
             img = await self._load_image_async(path)
             
-            # Resize if fixed dimensions provided
-            target_w = self._parse_length(fixed_width, 'x') if fixed_width else None
-            target_h = self._parse_length(fixed_height, 'y') if fixed_height else None
+            # Temporarily set canvas and draw to allow resolving lengths relative to the image itself,
+            # since a canvas may not exist yet when initializing the canvas from an image.
+            temp_canvas = getattr(self, 'canvas', None)
+            temp_draw = getattr(self, 'draw', None)
+            
+            self.canvas = img
+            self.draw = ImageDraw.Draw(img)
+            
+            try:
+                target_w = self._parse_length(fixed_width, 'x') if fixed_width else None
+                target_h = self._parse_length(fixed_height, 'y') if fixed_height else None
+            finally:
+                # Restore original canvas and draw contexts so we don't leak temporary state if resizing fails
+                self.canvas = temp_canvas
+                self.draw = temp_draw
             
             if target_w and target_h:
                 img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
