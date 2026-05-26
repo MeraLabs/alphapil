@@ -4,6 +4,17 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 26, 2026 (v0.2.5)
+!!! abstract "Patch Update: Fixed \$useImageAsCanvas Dimension Resolution"
+    This patch resolves a critical bug where `$useImageAsCanvas` would crash due to the lack of an existing canvas when resolving its fixed dimensions.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🐛 Fix** | **\$useImageAsCanvas** | Allowed parsing `fixed_width` and `fixed_height` when no canvas has been created yet by temporarily using the loaded image as context. | [Docs](functions/images/useImageAsCanvas.md) |
+    | **🤖 AI** | **Manifest v0.2.5** | Synchronized technical manifest with the package version 0.2.5. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 24, 2026 (v0.2.4)
 !!! abstract "Feature Release: Rotation, Color Enhancements & Shape Shadows/Glows"
     This update adds powerful creative control to AlphaPIL: rotate the canvas or active layers, adjust image qualities (brightness, contrast, saturation) dynamically, generate background patterns, and apply drop shadows and outer glow effects natively to shapes. Additionally, redundant text helper functions were cleaned up.
