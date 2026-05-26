@@ -31,12 +31,31 @@ def generate_html(image_path, server_root, output_dir):
     # Use forward slashes for HTML URLs
     rel_image_path = rel_image_path.replace(os.sep, '/')
 
+    # Discover system fonts on launch to feed searchable dropdown
+    system_fonts = []
+    try:
+        from .modules.text import TextMixin
+        class FontDiscoverer(TextMixin):
+            def __init__(self):
+                self._system_fonts = {}
+                self.errors = []
+            def get_fonts(self):
+                self._discover_system_fonts()
+                return sorted(list(set([k.title() for k in self._system_fonts.keys() if not k.endswith(('.ttf', '.otf'))])))
+        fd = FontDiscoverer()
+        system_fonts = fd.get_fonts()
+    except Exception:
+        system_fonts = ["Arial", "Courier New", "Georgia", "Impact", "Times New Roman", "Trebuchet MS", "Verdana"]
+
+    import json
+    system_fonts_json = json.dumps(system_fonts)
+
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AlphaPIL Visual Designer 🎯</title>
+    <title>AlphaPIL Visual IDE & Designer 🎯</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         * {{
@@ -47,7 +66,7 @@ def generate_html(image_path, server_root, output_dir):
         }}
 
         body {{
-            background: radial-gradient(circle at top right, #1a1a2e, #08080f);
+            background: radial-gradient(circle at top right, #1b1b32, #08080f);
             color: #f1f1f7;
             min-height: 100vh;
             display: flex;
@@ -56,10 +75,10 @@ def generate_html(image_path, server_root, output_dir):
         }}
 
         header {{
-            background: rgba(10, 10, 20, 0.8);
+            background: rgba(10, 10, 20, 0.85);
             backdrop-filter: blur(16px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 14px 40px;
+            padding: 12px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -91,16 +110,16 @@ def generate_html(image_path, server_root, output_dir):
         .main-container {{
             display: flex;
             flex: 1;
-            padding: 24px 40px;
+            padding: 20px 40px;
             gap: 30px;
-            max-width: 1800px;
+            max-width: 1920px;
             margin: 0 auto;
             width: 100%;
         }}
 
         .picker-area {{
             flex: 1;
-            background: rgba(10, 10, 20, 0.4);
+            background: rgba(10, 10, 20, 0.45);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 24px;
             display: flex;
@@ -108,10 +127,10 @@ def generate_html(image_path, server_root, output_dir):
             align-items: center;
             padding: 20px;
             position: relative;
-            min-height: 600px;
+            min-height: 650px;
             max-height: 85vh;
             overflow: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }}
 
         .image-wrapper {{
@@ -121,6 +140,7 @@ def generate_html(image_path, server_root, output_dir):
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: width 0.2s, height 0.2s;
         }}
 
         #target-img {{
@@ -151,7 +171,7 @@ def generate_html(image_path, server_root, output_dir):
         .reticle-y {{ width: 100%; height: 1px; left: 0; }}
 
         .control-panel {{
-            width: 440px;
+            width: 480px;
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -164,49 +184,48 @@ def generate_html(image_path, server_root, output_dir):
             background: rgba(20, 20, 35, 0.7);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 20px;
+            border-radius: 16px;
+            padding: 18px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }}
 
         .panel-title {{
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             color: #a5a5cc;
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }}
 
         .coordinate-display {{
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 14px;
         }}
 
         .coord-box {{
             background: rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 10px;
-            padding: 10px;
+            padding: 8px;
             text-align: center;
         }}
 
         .coord-label {{
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
             color: #7d7db5;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }}
 
         .coord-value {{
-            font-size: 26px;
+            font-size: 22px;
             font-weight: 800;
             color: #ffffff;
         }}
@@ -214,29 +233,28 @@ def generate_html(image_path, server_root, output_dir):
         /* Tool Grid */
         .tool-grid {{
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 10px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
         }}
 
         .tool-btn {{
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 10px;
-            padding: 10px 6px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 8px 4px;
             color: #b5b5d5;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             transition: all 0.2s ease;
         }}
 
         .tool-btn:hover {{
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.06);
             color: #ffffff;
             border-color: rgba(88, 101, 242, 0.4);
         }}
@@ -245,23 +263,23 @@ def generate_html(image_path, server_root, output_dir):
             background: rgba(88, 101, 242, 0.15);
             border-color: #5865F2;
             color: #ffffff;
-            box-shadow: 0 0 12px rgba(88, 101, 242, 0.25);
+            box-shadow: 0 0 10px rgba(88, 101, 242, 0.25);
         }}
 
         .tool-icon {{
-            font-size: 18px;
+            font-size: 16px;
         }}
 
-        /* Settings Forms */
+        /* Styling Inputs */
         .input-group {{
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }}
 
         .input-label {{
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             color: #8c8caf;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             font-weight: 600;
         }}
 
@@ -269,10 +287,10 @@ def generate_html(image_path, server_root, output_dir):
             width: 100%;
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 8px 12px;
+            border-radius: 6px;
+            padding: 6px 10px;
             color: white;
-            font-size: 13px;
+            font-size: 12px;
             outline: none;
             transition: border-color 0.2s ease;
         }}
@@ -294,13 +312,36 @@ def generate_html(image_path, server_root, output_dir):
         }}
 
         .color-input-preview {{
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 6px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             cursor: pointer;
             padding: 0;
             background: none;
+        }}
+
+        /* Variables list */
+        .var-row {{
+            display: grid;
+            grid-template-columns: 1fr 1fr 28px;
+            gap: 8px;
+            margin-bottom: 6px;
+            align-items: center;
+        }}
+
+        .add-var-btn {{
+            background: rgba(87, 242, 135, 0.15);
+            border: 1px dashed #57F287;
+            color: #57F287;
+            padding: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+            margin-top: 6px;
         }}
 
         /* Layer List */
@@ -309,30 +350,30 @@ def generate_html(image_path, server_root, output_dir):
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }}
 
         .layer-item {{
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 6px 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
+            font-size: 11px;
         }}
 
         .layer-info {{
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             color: #d1d1e0;
         }}
 
         .layer-actions {{
             display: flex;
-            gap: 6px;
+            gap: 4px;
         }}
 
         .layer-action-btn {{
@@ -342,8 +383,7 @@ def generate_html(image_path, server_root, output_dir):
             cursor: pointer;
             padding: 2px;
             border-radius: 4px;
-            font-size: 12px;
-            transition: all 0.2s ease;
+            font-size: 11px;
         }}
 
         .layer-action-btn:hover {{
@@ -356,30 +396,24 @@ def generate_html(image_path, server_root, output_dir):
             background: rgba(87, 242, 135, 0.1);
         }}
 
-        /* Code snippets */
+        /* Code export/import */
         .clipboard-box {{
             background: rgba(0, 0, 0, 0.3);
             border: 1px dashed rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            padding: 12px;
+            border-radius: 8px;
+            padding: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-family: monospace;
-            font-size: 12px;
+            font-size: 11px;
             color: #e2e2f0;
             cursor: pointer;
-            transition: border 0.3s ease;
-            margin-top: 8px;
-        }}
-
-        .clipboard-box:hover {{
-            border-color: #5865F2;
-            background: rgba(88, 101, 242, 0.05);
+            margin-top: 6px;
         }}
 
         .copy-tag {{
-            font-size: 10px;
+            font-size: 9px;
             color: #5865F2;
             font-weight: 800;
             letter-spacing: 0.5px;
@@ -387,30 +421,29 @@ def generate_html(image_path, server_root, output_dir):
 
         .full-code-area {{
             width: 100%;
-            height: 120px;
+            height: 110px;
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 10px;
+            border-radius: 6px;
+            padding: 8px;
             color: #57F287;
             font-family: monospace;
-            font-size: 11px;
+            font-size: 10.5px;
             resize: none;
             outline: none;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }}
 
         .primary-btn {{
             width: 100%;
             background: linear-gradient(135deg, #5865F2, #4752c4);
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             color: white;
-            padding: 10px;
+            padding: 8px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -418,8 +451,7 @@ def generate_html(image_path, server_root, output_dir):
         }}
 
         .primary-btn:hover {{
-            background: linear-gradient(135deg, #6c78ff, #5865F2);
-            box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
+            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
         }}
 
         .toast {{
@@ -429,10 +461,10 @@ def generate_html(image_path, server_root, output_dir):
             transform: translateX(-50%) translateY(100px);
             background: #57F287;
             color: #0c0c14;
-            padding: 12px 24px;
-            border-radius: 30px;
+            padding: 10px 20px;
+            border-radius: 20px;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 14px;
             box-shadow: 0 10px 25px rgba(87, 242, 135, 0.4);
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 1000;
@@ -447,8 +479,8 @@ def generate_html(image_path, server_root, output_dir):
 
         .upload-area {{
             border: 2px dashed rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            padding: 16px;
+            border-radius: 12px;
+            padding: 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -458,16 +490,6 @@ def generate_html(image_path, server_root, output_dir):
             border-color: #5865F2;
             background: rgba(88, 101, 242, 0.05);
         }}
-
-        .upload-icon {{
-            font-size: 20px;
-            margin-bottom: 4px;
-        }}
-
-        .upload-text {{
-            font-size: 12px;
-            color: #a5a5cc;
-        }}
     </style>
 </head>
 <body>
@@ -475,12 +497,13 @@ def generate_html(image_path, server_root, output_dir):
     <header>
         <div class="logo">
             <div class="logo-dot"></div>
-            AlphaPIL Designer 🎯
+            AlphaPIL IDE & Visualizer 🎯
         </div>
-        <div style="font-size: 14px; color: #a5a5cc;">Active: <span style="color: white; font-weight: 600;">{os.path.basename(image_path)}</span></div>
+        <div style="font-size: 13px; color: #a5a5cc;">Canvas: <span id="canvas-size-header" style="color: white; font-weight: 600;">Loading...</span></div>
     </header>
 
     <div class="main-container">
+        <!-- Visual Designing Canvas -->
         <div class="picker-area">
             <div class="image-wrapper" id="img-wrapper">
                 <img id="target-img" src="/{rel_image_path}" alt="Rendered Canvas">
@@ -491,24 +514,34 @@ def generate_html(image_path, server_root, output_dir):
         </div>
 
         <div class="control-panel">
-            <!-- Coordinates Card -->
+            <!-- Canvas Resizing Settings -->
             <div class="panel-card">
                 <div class="panel-title">
-                    <span>🎯 Live Coordinates</span>
+                    <span>📏 Canvas Size settings</span>
                 </div>
-                <div class="coordinate-display">
-                    <div class="coord-box" id="box-x">
-                        <div class="coord-label">X Axis</div>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label class="input-label">Canvas Width (px)</label>
+                        <input type="number" class="input-field" id="canvas-w" oninput="resizeCanvasVisuals()">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Canvas Height (px)</label>
+                        <input type="number" class="input-field" id="canvas-h" oninput="resizeCanvasVisuals()">
+                    </div>
+                </div>
+                <div class="coordinate-display" style="margin-top: 8px;">
+                    <div class="coord-box">
+                        <div class="coord-label">Cursor X</div>
                         <div class="coord-value" id="val-x">0</div>
                     </div>
-                    <div class="coord-box" id="box-y">
-                        <div class="coord-label">Y Axis</div>
+                    <div class="coord-box">
+                        <div class="coord-label">Cursor Y</div>
                         <div class="coord-value" id="val-y">0</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Visual Tools Selector -->
+            <!-- Visual Tools selector grid -->
             <div class="panel-card">
                 <div class="panel-title">
                     <span>🛠️ Designer Tools</span>
@@ -520,62 +553,85 @@ def generate_html(image_path, server_root, output_dir):
                     </button>
                     <button class="tool-btn" onclick="setTool('drawText')">
                         <span class="tool-icon">🔤</span>
-                        <span>drawText</span>
-                    </button>
-                    <button class="tool-btn" onclick="setTool('drawTextMid')">
-                        <span class="tool-icon">↔️</span>
-                        <span>TextMid</span>
-                    </button>
-                    <button class="tool-btn" onclick="setTool('drawTextIn')">
-                        <span class="tool-icon">↕️</span>
-                        <span>TextIn</span>
+                        <span>Text</span>
                     </button>
                     <button class="tool-btn" onclick="setTool('drawRect')">
                         <span class="tool-icon">🟩</span>
-                        <span>drawRect</span>
+                        <span>Rect</span>
                     </button>
                     <button class="tool-btn" onclick="setTool('drawRoundedRect')">
                         <span class="tool-icon">🟢</span>
-                        <span>RoundRect</span>
+                        <span>R-Rect</span>
                     </button>
                     <button class="tool-btn" onclick="setTool('drawCircle')">
                         <span class="tool-icon">🟡</span>
-                        <span>drawCircle</span>
+                        <span>Circle</span>
                     </button>
                     <button class="tool-btn" onclick="setTool('drawLine')">
                         <span class="tool-icon">➖</span>
-                        <span>drawLine</span>
+                        <span>Line</span>
                     </button>
                     <button class="tool-btn" onclick="setTool('drawImage')">
                         <span class="tool-icon">🖼️</span>
-                        <span>drawImage</span>
+                        <span>Image</span>
                     </button>
-                </div>
-                <div style="font-size: 11px; color: #8c8caf; text-align: center; margin-top: 4px;">
-                    * For Box/Line/Circle tools, Click & Drag on canvas to draw.
+                    <button class="tool-btn" onclick="setTool('drawBarChart')">
+                        <span class="tool-icon">📊</span>
+                        <span>BarChart</span>
+                    </button>
+                    <button class="tool-btn" onclick="setTool('drawLineChart')">
+                        <span class="tool-icon">📈</span>
+                        <span>LineChart</span>
+                    </button>
+                    <button class="tool-btn" onclick="setTool('drawProgressBar')">
+                        <span class="tool-icon">⏳</span>
+                        <span>Progress</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Dynamic Settings Config Box -->
+            <!-- Variables & Interpolation Dashboard -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <span>🤖 Mock Variables Inspector</span>
+                </div>
+                <div id="vars-list-container">
+                    <!-- Dynamic variable rows here -->
+                </div>
+                <button class="add-var-btn" onclick="addMockVariableRow()">➕ Add Variable Row</button>
+            </div>
+
+            <!-- Import existing templates -->
+            <div class="panel-card">
+                <div class="panel-title">
+                    <span>📥 Import AlphaPIL Code</span>
+                </div>
+                <textarea class="full-code-area" id="import-code-area" placeholder="Paste your AlphaPIL template code here..."></textarea>
+                <button class="primary-btn" onclick="importAlphaPILCode()">
+                    <span>⚡</span> Import & Parse Template
+                </button>
+            </div>
+
+            <!-- Contextual Styling Config Box -->
             <div class="panel-card" id="settings-card" style="display: none;">
                 <div class="panel-title" id="settings-title">
                     <span>⚙️ Styling Controls</span>
                 </div>
                 
-                <!-- Text Inputs Group -->
+                <!-- Text Configurations -->
                 <div id="settings-group-text" style="display: none;">
                     <div class="input-group">
-                        <label class="input-label">Text Content</label>
-                        <input type="text" class="input-field" id="ctrl-text-content" value="Hello AlphaPIL" oninput="updateActiveElement()">
+                        <label class="input-label">Text Content (Supports {user} variable placeholders)</label>
+                        <input type="text" class="input-field" id="ctrl-text-content" value="Welcome {user}" oninput="updateActiveElement()">
                     </div>
                     <div class="inline-inputs">
                         <div class="input-group">
                             <label class="input-label">Font Family</label>
-                            <input type="text" class="input-field" id="ctrl-font-family" value="Arial" oninput="updateActiveElement()">
+                            <select class="input-field" id="ctrl-font-family" onchange="updateActiveElement()"></select>
                         </div>
                         <div class="input-group">
                             <label class="input-label">Font Size (px)</label>
-                            <input type="number" class="input-field" id="ctrl-font-size" value="32" min="6" max="250" oninput="updateActiveElement()">
+                            <input type="text" class="input-field" id="ctrl-font-size" value="32" oninput="updateActiveElement()">
                         </div>
                     </div>
                     <div class="inline-inputs">
@@ -597,7 +653,7 @@ def generate_html(image_path, server_root, output_dir):
                     </div>
                 </div>
 
-                <!-- Shapes Inputs Group -->
+                <!-- Shapes & Outlines Configurations -->
                 <div id="settings-group-shape" style="display: none;">
                     <div class="inline-inputs">
                         <div class="input-group">
@@ -608,29 +664,58 @@ def generate_html(image_path, server_root, output_dir):
                             </div>
                         </div>
                         <div class="input-group">
-                            <label class="input-label">Fill Color</label>
-                            <div class="color-picker-wrapper" style="gap: 4px;">
-                                <input type="color" class="color-input-preview" id="ctrl-fill-color-picker" value="#5865F2" oninput="document.getElementById('ctrl-fill-none').checked = false; syncColorInput('ctrl-fill-color-picker', 'ctrl-fill-color-text')">
-                                <input type="text" class="input-field" id="ctrl-fill-color-text" value="#5865F2" oninput="document.getElementById('ctrl-fill-none').checked = false; syncColorText('ctrl-fill-color-text', 'ctrl-fill-color-picker')">
-                            </div>
-                            <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #8c8caf; margin-top: 4px; cursor: pointer;">
-                                <input type="checkbox" id="ctrl-fill-none" onchange="toggleFillNone(this.checked)"> Transparent Fill
-                            </label>
+                            <label class="input-label">Fill Customization</label>
+                            <select class="input-field" id="ctrl-fill-mode" onchange="toggleFillMode(this.value)">
+                                <option value="solid">Solid Color</option>
+                                <option value="none">Transparent</option>
+                                <option value="gradient">Gradient Fill</option>
+                            </select>
                         </div>
                     </div>
+                    
+                    <!-- Solid Fill Color Box -->
+                    <div class="input-group" id="solid-fill-wrapper">
+                        <label class="input-label">Solid Fill Color</label>
+                        <div class="color-picker-wrapper">
+                            <input type="color" class="color-input-preview" id="ctrl-fill-color-picker" value="#5865F2" oninput="syncColorInput('ctrl-fill-color-picker', 'ctrl-fill-color-text')">
+                            <input type="text" class="input-field" id="ctrl-fill-color-text" value="#5865F2" oninput="syncColorText('ctrl-fill-color-text', 'ctrl-fill-color-picker')">
+                        </div>
+                    </div>
+
+                    <!-- Gradients Visual Customizer Box -->
+                    <div id="gradient-fill-wrapper" style="display: none; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="inline-inputs">
+                            <div class="input-group">
+                                <label class="input-label">Gradient Type</label>
+                                <select class="input-field" id="ctrl-grad-type" onchange="updateActiveElement()">
+                                    <option value="linear">Linear</option>
+                                    <option value="radial">Radial</option>
+                                </select>
+                            </div>
+                            <div class="input-group" id="grad-angle-group">
+                                <label class="input-label">Linear Angle (deg)</label>
+                                <input type="range" min="0" max="360" value="90" id="ctrl-grad-angle" style="width: 100%;" oninput="updateActiveElement()">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Color Stops (Semicolon Separated: color,offset)</label>
+                            <input type="text" class="input-field" id="ctrl-grad-stops" value="#ff0000,0;#0000ff,1" oninput="updateActiveElement()">
+                        </div>
+                    </div>
+
                     <div class="inline-inputs">
                         <div class="input-group">
-                            <label class="input-label">Line/Stroke Width (`lw`)</label>
-                            <input type="number" class="input-field" id="ctrl-shape-lw" value="2" min="0" max="50" oninput="updateActiveElement()">
+                            <label class="input-label">Line Width (`lw`)</label>
+                            <input type="text" class="input-field" id="ctrl-shape-lw" value="2" oninput="updateActiveElement()">
                         </div>
                         <div class="input-group" id="radius-wrapper">
                             <label class="input-label">Corner Radius (`radius`)</label>
-                            <input type="number" class="input-field" id="ctrl-shape-radius" value="12" min="0" max="500" oninput="updateActiveElement()">
+                            <input type="text" class="input-field" id="ctrl-shape-radius" value="12" oninput="updateActiveElement()">
                         </div>
                     </div>
                 </div>
 
-                <!-- Image Inputs Group -->
+                <!-- Images Configurations -->
                 <div id="settings-group-image" style="display: none;">
                     <div class="input-group">
                         <label class="input-label">Local Image Path</label>
@@ -638,12 +723,56 @@ def generate_html(image_path, server_root, output_dir):
                     </div>
                     <div class="input-group">
                         <label class="input-label">Opacity (0.0 to 1.0)</label>
-                        <input type="number" class="input-field" id="ctrl-image-opacity" value="1.0" min="0.0" max="1.0" step="0.1" oninput="updateActiveElement()">
+                        <input type="text" class="input-field" id="ctrl-image-opacity" value="1.0" oninput="updateActiveElement()">
                     </div>
                 </div>
 
-                <!-- Copied Snippet Box inside configuration -->
-                <div style="margin-top: 14px;">
+                <!-- Data Visualization Charts Configurations -->
+                <div id="settings-group-chart" style="display: none;">
+                    <div class="inline-inputs">
+                        <div class="input-group">
+                            <label class="input-label">Data Values (Comma Separated)</label>
+                            <input type="text" class="input-field" id="ctrl-chart-vals" value="30,80,50,90,40" oninput="updateActiveElement()">
+                        </div>
+                        <div class="input-group" id="chart-labels-group">
+                            <label class="input-label">Labels (Comma Separated)</label>
+                            <input type="text" class="input-field" id="ctrl-chart-labels" value="Jan,Feb,Mar,Apr,May" oninput="updateActiveElement()">
+                        </div>
+                    </div>
+                    <div class="inline-inputs">
+                        <div class="input-group">
+                            <label class="input-label">Chart Color Theme</label>
+                            <select class="input-field" id="ctrl-chart-theme" onchange="updateActiveElement()">
+                                <option value="blue">Ocean Blue</option>
+                                <option value="green">Emerald Green</option>
+                                <option value="modern">Modern Purple</option>
+                                <option value="dark">Charcoal Gold</option>
+                                <option value="neon">Neon Electric</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Gap / Rounding</label>
+                            <div class="inline-inputs">
+                                <input type="number" class="input-field" id="ctrl-chart-gap" value="15" oninput="updateActiveElement()">
+                                <input type="number" class="input-field" id="ctrl-chart-radius" value="6" oninput="updateActiveElement()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="inline-inputs" id="chart-extra-group">
+                        <div class="input-group">
+                            <label class="input-label">Max Scaled Value</label>
+                            <input type="text" class="input-field" id="ctrl-chart-maxval" value="" placeholder="Auto" oninput="updateActiveElement()">
+                        </div>
+                        <div class="input-group" style="display: flex; align-items: center; gap: 6px; padding-top: 18px;">
+                            <label style="cursor: pointer; font-size: 12px; color: #a5a5cc;">
+                                <input type="checkbox" id="ctrl-chart-showlabels" checked onchange="updateActiveElement()"> Show Labels
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generated Snippet -->
+                <div style="margin-top: 12px;">
                     <label class="input-label">Active Element Code Snippet:</label>
                     <div class="clipboard-box" onclick="copyActiveCode()">
                         <span id="active-snippet-text">Click and drag canvas to generate code</span>
@@ -655,14 +784,14 @@ def generate_html(image_path, server_root, output_dir):
             <!-- Visual Composed Layers Card -->
             <div class="panel-card" id="layers-card" style="display: none;">
                 <div class="panel-title">
-                    <span>📚 Composed Layers ({os.path.basename(image_path)})</span>
+                    <span>📚 Composed Layers</span>
                 </div>
                 <div class="layer-list" id="layers-list-container">
                     <!-- Dynamic Layer items here -->
                 </div>
             </div>
 
-            <!-- Full Template Code Export Card -->
+            <!-- Composed Full Template Export Card -->
             <div class="panel-card" id="code-export-card" style="display: none;">
                 <div class="panel-title">
                     <span>💾 Generated AlphaPIL Template</span>
@@ -676,11 +805,10 @@ def generate_html(image_path, server_root, output_dir):
             <!-- Load Different Image Card -->
             <div class="panel-card">
                 <div class="panel-title">
-                    <span>📁 Load Different Background</span>
+                    <span>📁 Load Background</span>
                 </div>
                 <div class="upload-area" onclick="document.getElementById('file-input').click()">
-                    <div class="upload-icon">📷</div>
-                    <div class="upload-text">Drag & Drop Image or Click to Browse</div>
+                    <div class="upload-text">Click to Browse/Drop Image</div>
                     <input type="file" id="file-input" style="display: none;" accept="image/*" onchange="loadFile(event)">
                 </div>
             </div>
@@ -688,46 +816,80 @@ def generate_html(image_path, server_root, output_dir):
     </div>
 
     <div class="toast" id="toast">
-        <span id="toast-message">✅ Coordinates copied to clipboard!</span>
+        <span id="toast-message">✅ Operation successful!</span>
     </div>
 
     <script>
-        const wrapper = document.getElementById('img-wrapper');
         const img = document.getElementById('target-img');
         const canvas = document.getElementById('overlay-canvas');
         const ctx = canvas.getContext('2d');
         const valX = document.getElementById('val-x');
         const valY = document.getElementById('val-y');
-        const boxX = document.getElementById('box-x');
-        const boxY = document.getElementById('box-y');
-        const rx = document.getElementById('reticle-x');
-        const ry = document.getElementById('reticle-y');
         const toast = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
 
+        // Dynamic System Fonts
+        const systemFonts = {system_fonts_json};
+        
+        // Populate system fonts searchable list
+        const fontDropdown = document.getElementById('ctrl-font-family');
+        systemFonts.forEach(font => {{
+            const opt = document.createElement('option');
+            opt.value = font;
+            opt.innerText = font;
+            fontDropdown.appendChild(opt);
+        }});
+        
         // Designer States
-        let elements = []; // Array of drawn visual elements
-        let activeTool = 'inspector'; // 'inspector', 'drawText', 'drawRect', etc.
+        let elements = [];
+        let activeTool = 'inspector';
         let isDrawing = false;
         let startX = 0, startY = 0;
         let currentX = 0, currentY = 0;
         let activeElementId = null;
+        
+        // Mock variables
+        let mockVariables = {{
+            user: "AlphaUser",
+            title: "Captain America",
+            margin: "30"
+        }};
 
-        // On Image Load, configure visual canvas and dimensions
+        // Initialize variables inspector on launch
+        updateMockVariablesDashboard();
+
+        // Canvas sizing states
         img.onload = () => {{
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
+            document.getElementById('canvas-w').value = img.naturalWidth;
+            document.getElementById('canvas-h').value = img.naturalHeight;
+            document.getElementById('canvas-size-header').innerText = `${{img.naturalWidth}}x${{img.naturalHeight}}`;
             drawAll();
         }};
         
-        // Safety trigger if image is already cached/loaded
         if (img.complete) {{
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
+            document.getElementById('canvas-w').value = img.naturalWidth;
+            document.getElementById('canvas-h').value = img.naturalHeight;
+            document.getElementById('canvas-size-header').innerText = `${{img.naturalWidth}}x${{img.naturalHeight}}`;
             setTimeout(drawAll, 200);
         }}
 
-        // Translate mouse Client positions to native pixel dimensions
+        // Scale inputs & canvas visual dimensions
+        function resizeCanvasVisuals() {{
+            const w = parseInt(document.getElementById('canvas-w').value) || img.naturalWidth;
+            const h = parseInt(document.getElementById('canvas-h').value) || img.naturalHeight;
+            canvas.width = w;
+            canvas.height = h;
+            img.style.width = w + 'px';
+            img.style.height = h + 'px';
+            document.getElementById('canvas-size-header').innerText = `${{w}}x${{h}}`;
+            drawAll();
+        }}
+
+        // Translate cursor Client positions to natural pixel dimensions
         function getCoords(e) {{
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
@@ -740,11 +902,77 @@ def generate_html(image_path, server_root, output_dir):
             }};
         }}
 
-        // Handle active tool selection
+        // Variable interpolation solver
+        function resolveVars(str) {{
+            if (typeof str !== 'string') return str;
+            // Solve {variable} replacements
+            return str.replace(/\\{{(\\w+)\\}}/g, (match, name) => {{
+                return mockVariables[name] !== undefined ? mockVariables[name] : match;
+            }});
+        }}
+
+        // Coordinate Solver with dynamic variables and basic mathematical operations
+        function parseCoord(val) {{
+            const resolved = resolveVars(String(val));
+            try {{
+                // Sanitize mathematical characters only
+                const sanitized = resolved.replace(/[^0-9\\\\+\\\\-\\\\*\\\\/\\\\%\\\\(\\\\)\\\\.\\\\s]/g, '');
+                return Function(`"use strict"; return (${{sanitized}})` )();
+            }} catch(e) {{
+                return parseInt(resolved) || 0;
+            }}
+        }}
+
+        // Variables Inspector list rendering
+        function updateMockVariablesDashboard() {{
+            const container = document.getElementById('vars-list-container');
+            container.innerHTML = '';
+            
+            Object.keys(mockVariables).forEach(key => {{
+                const row = document.createElement('div');
+                row.className = 'var-row';
+                row.innerHTML = `
+                    <input type="text" class="input-field" value="${{key}}" onchange="renameMockVariable('${{key}}', this.value)" placeholder="var_name">
+                    <input type="text" class="input-field" value="${{mockVariables[key]}}" oninput="setMockVariableValue('${{key}}', this.value)" placeholder="value">
+                    <button class="layer-action-btn" onclick="deleteMockVariable('${{key}}')">🗑️</button>
+                `;
+                container.appendChild(row);
+            }});
+        }}
+
+        function setMockVariableValue(key, val) {{
+            mockVariables[key] = val;
+            drawAll();
+            updateLayersPanel();
+        }}
+
+        function renameMockVariable(oldKey, newKey) {{
+            if (!newKey || oldKey === newKey) return;
+            mockVariables[newKey] = mockVariables[oldKey];
+            delete mockVariables[oldKey];
+            updateMockVariablesDashboard();
+            drawAll();
+            updateLayersPanel();
+        }}
+
+        function deleteMockVariable(key) {{
+            delete mockVariables[key];
+            updateMockVariablesDashboard();
+            drawAll();
+            updateLayersPanel();
+        }}
+
+        function addMockVariableRow() {{
+            const newKey = 'var_' + Object.keys(mockVariables).length;
+            mockVariables[newKey] = 'value';
+            updateMockVariablesDashboard();
+            drawAll();
+        }}
+
+        // Handle Active Tool Selections
         function setTool(toolName) {{
             activeTool = toolName;
             
-            // Toggle active visual states on grid buttons
             document.querySelectorAll('.tool-btn').forEach(btn => {{
                 btn.classList.remove('active');
                 if (btn.querySelector('.tool-icon').parentElement.onclick.toString().includes(toolName)) {{
@@ -752,11 +980,11 @@ def generate_html(image_path, server_root, output_dir):
                 }}
             }});
 
-            // Show / Hide Styling Cards
             const settingsCard = document.getElementById('settings-card');
             const gText = document.getElementById('settings-group-text');
             const gShape = document.getElementById('settings-group-shape');
             const gImg = document.getElementById('settings-group-image');
+            const gChart = document.getElementById('settings-group-chart');
             
             if (toolName === 'inspector') {{
                 settingsCard.style.display = 'none';
@@ -765,11 +993,13 @@ def generate_html(image_path, server_root, output_dir):
                 gText.style.display = (toolName.startsWith('drawText')) ? 'block' : 'none';
                 gShape.style.display = (toolName.startsWith('drawRect') || toolName === 'drawRoundedRect' || toolName === 'drawCircle' || toolName === 'drawLine') ? 'block' : 'none';
                 gImg.style.display = (toolName === 'drawImage') ? 'block' : 'none';
+                gChart.style.display = (toolName.startsWith('drawBarChart') || toolName === 'drawLineChart' || toolName === 'drawProgressBar') ? 'block' : 'none';
 
-                // Display anchors only on point text drawText
+                // Contextual sub-elements display
                 document.getElementById('anchor-wrapper').style.display = (toolName === 'drawText') ? 'block' : 'none';
-                // Display radius only on rounded rects
                 document.getElementById('radius-wrapper').style.display = (toolName === 'drawRoundedRect') ? 'block' : 'none';
+                document.getElementById('chart-labels-group').style.display = (toolName !== 'drawProgressBar') ? 'block' : 'none';
+                document.getElementById('chart-extra-group').style.display = (toolName !== 'drawProgressBar') ? 'grid' : 'none';
                 
                 document.getElementById('settings-title').querySelector('span').innerText = `⚙️ ${{toolName}} Controls`;
                 document.getElementById('active-snippet-text').innerText = "Click and drag canvas to generate code";
@@ -777,7 +1007,24 @@ def generate_html(image_path, server_root, output_dir):
             drawAll();
         }}
 
-        // Synchronization color utilities
+        // Color & fill controls toggles
+        function toggleFillMode(mode) {{
+            const solidWrapper = document.getElementById('solid-fill-wrapper');
+            const gradWrapper = document.getElementById('gradient-fill-wrapper');
+            
+            if (mode === 'solid') {{
+                solidWrapper.style.display = 'block';
+                gradWrapper.style.display = 'none';
+            }} else if (mode === 'gradient') {{
+                solidWrapper.style.display = 'none';
+                gradWrapper.style.display = 'block';
+            }} else {{
+                solidWrapper.style.display = 'none';
+                gradWrapper.style.display = 'none';
+            }}
+            updateActiveElement();
+        }}
+
         function syncColorInput(pickerId, textId) {{
             document.getElementById(textId).value = document.getElementById(pickerId).value;
             updateActiveElement();
@@ -791,28 +1038,13 @@ def generate_html(image_path, server_root, output_dir):
             updateActiveElement();
         }}
 
-        function toggleFillNone(isNone) {{
-            if (isNone) {{
-                document.getElementById('ctrl-fill-color-text').value = 'none';
-            }} else {{
-                document.getElementById('ctrl-fill-color-text').value = document.getElementById('ctrl-fill-color-picker').value;
-            }}
-            updateActiveElement();
-        }}
-
-        // Canvas Interactions (Drawing/Mousedowns)
+        // Canvas Interactions (Click & Drags)
         canvas.addEventListener('mousedown', (e) => {{
             const coord = getCoords(e);
             
             if (activeTool === 'inspector') {{
                 const coordinates = `${{coord.x}};${{coord.y}}`;
-                copyText(coordinates, "Coordinates copied to clipboard!");
-                boxX.classList.add('highlight');
-                boxY.classList.add('highlight');
-                setTimeout(() => {{
-                    boxX.classList.remove('highlight');
-                    boxY.classList.remove('highlight');
-                }}, 1200);
+                copyText(coordinates, "Coordinates copied!");
                 return;
             }}
 
@@ -823,7 +1055,6 @@ def generate_html(image_path, server_root, output_dir):
             currentY = startY;
 
             if (activeTool === 'drawText') {{
-                // Point placing tool
                 isDrawing = false;
                 const newElem = createNewElement(startX, startY, 0, 0);
                 elements.push(newElem);
@@ -836,12 +1067,13 @@ def generate_html(image_path, server_root, output_dir):
         canvas.addEventListener('mousemove', (e) => {{
             const coord = getCoords(e);
             
-            // Reticle positioning
             const rect = canvas.getBoundingClientRect();
             if (coord.x >= 0 && coord.x <= canvas.width && coord.y >= 0 && coord.y <= canvas.height) {{
                 valX.innerText = coord.x;
                 valY.innerText = coord.y;
                 
+                const rx = document.getElementById('reticle-x');
+                const ry = document.getElementById('reticle-y');
                 rx.style.left = coord.cx + 'px';
                 rx.style.display = 'block';
                 
@@ -855,7 +1087,6 @@ def generate_html(image_path, server_root, output_dir):
             currentX = coord.x;
             currentY = coord.y;
             
-            // Render immediate overlay preview
             drawAll();
             drawPreviewShape();
         }});
@@ -867,7 +1098,6 @@ def generate_html(image_path, server_root, output_dir):
             const w = currentX - startX;
             const h = currentY - startY;
             
-            // Avoid creating tiny empty boxes
             if (Math.abs(w) < 4 && Math.abs(h) < 4 && activeTool !== 'drawCircle' && activeTool !== 'drawLine') {{
                 return;
             }}
@@ -881,20 +1111,19 @@ def generate_html(image_path, server_root, output_dir):
         }});
 
         function hideReticle() {{
-            rx.style.display = 'none';
-            ry.style.display = 'none';
+            document.getElementById('reticle-x').style.display = 'none';
+            document.getElementById('reticle-y').style.display = 'none';
         }}
 
         // Dynamic Elements Constructors
         function createNewElement(x, y, w, h) {{
-            // Normalize values for rectangles
             let nx = w < 0 ? x + w : x;
             let ny = h < 0 ? y + h : y;
             let nw = Math.abs(w);
             let nh = Math.abs(h);
 
             const elem = {{
-                id: Date.now(),
+                id: Date.now() + Math.random(),
                 type: activeTool,
                 params: {{}}
             }};
@@ -907,11 +1136,16 @@ def generate_html(image_path, server_root, output_dir):
                     h: nh || 60,
                     text: document.getElementById('ctrl-text-content').value,
                     font: document.getElementById('ctrl-font-family').value,
-                    size: parseInt(document.getElementById('ctrl-font-size').value) || 24,
+                    size: document.getElementById('ctrl-font-size').value,
                     color: document.getElementById('ctrl-text-color-text').value,
                     anchor: document.getElementById('ctrl-text-anchor').value
                 }};
             }} else if (activeTool === 'drawRect' || activeTool === 'drawRoundedRect' || activeTool === 'drawCircle' || activeTool === 'drawLine') {{
+                const fillMode = document.getElementById('ctrl-fill-mode').value;
+                let fill = 'none';
+                if (fillMode === 'solid') fill = document.getElementById('ctrl-fill-color-text').value;
+                else if (fillMode === 'gradient') fill = 'gradient';
+
                 elem.params = {{
                     x: nx,
                     y: ny,
@@ -922,9 +1156,12 @@ def generate_html(image_path, server_root, output_dir):
                     x2: currentX,
                     y2: currentY,
                     color: document.getElementById('ctrl-outline-color-text').value,
-                    fill: document.getElementById('ctrl-fill-color-text').value,
-                    lw: parseInt(document.getElementById('ctrl-shape-lw').value) || 2,
-                    radius: parseInt(document.getElementById('ctrl-shape-radius').value) || 12
+                    fill: fill,
+                    lw: document.getElementById('ctrl-shape-lw').value,
+                    radius: document.getElementById('ctrl-shape-radius').value,
+                    gradType: document.getElementById('ctrl-grad-type').value,
+                    gradStops: document.getElementById('ctrl-grad-stops').value,
+                    gradAngle: document.getElementById('ctrl-grad-angle').value
                 }};
                 
                 if (activeTool === 'drawCircle') {{
@@ -939,14 +1176,28 @@ def generate_html(image_path, server_root, output_dir):
                     w: nw || 150,
                     h: nh || 150,
                     path: document.getElementById('ctrl-image-path').value,
-                    opacity: parseFloat(document.getElementById('ctrl-image-opacity').value) || 1.0
+                    opacity: document.getElementById('ctrl-image-opacity').value
+                }};
+            }} else if (activeTool.startsWith('drawBarChart') || activeTool === 'drawLineChart' || activeTool === 'drawProgressBar') {{
+                elem.params = {{
+                    x: nx,
+                    y: ny,
+                    w: nw || 300,
+                    h: nh || 180,
+                    vals: document.getElementById('ctrl-chart-vals').value,
+                    labels: document.getElementById('ctrl-chart-labels').value,
+                    theme: document.getElementById('ctrl-chart-theme').value,
+                    gap: parseInt(document.getElementById('ctrl-chart-gap').value) || 15,
+                    radius: parseInt(document.getElementById('ctrl-chart-radius').value) || 6,
+                    maxval: document.getElementById('ctrl-chart-maxval').value,
+                    showlabels: document.getElementById('ctrl-chart-showlabels').checked
                 }};
             }}
 
             return elem;
         }}
 
-        // Updates selected element fields on input changes
+        // Update parameters on styling controls inputs
         function updateActiveElement() {{
             if (!activeElementId) return;
             const elem = elements.find(el => el.id === activeElementId);
@@ -955,24 +1206,40 @@ def generate_html(image_path, server_root, output_dir):
             if (elem.type.startsWith('drawText')) {{
                 elem.params.text = document.getElementById('ctrl-text-content').value;
                 elem.params.font = document.getElementById('ctrl-font-family').value;
-                elem.params.size = parseInt(document.getElementById('ctrl-font-size').value) || 24;
+                elem.params.size = document.getElementById('ctrl-font-size').value;
                 elem.params.color = document.getElementById('ctrl-text-color-text').value;
                 elem.params.anchor = document.getElementById('ctrl-text-anchor').value;
             }} else if (elem.type === 'drawRect' || elem.type === 'drawRoundedRect' || elem.type === 'drawCircle' || elem.type === 'drawLine') {{
+                const fillMode = document.getElementById('ctrl-fill-mode').value;
+                let fill = 'none';
+                if (fillMode === 'solid') fill = document.getElementById('ctrl-fill-color-text').value;
+                else if (fillMode === 'gradient') fill = 'gradient';
+
                 elem.params.color = document.getElementById('ctrl-outline-color-text').value;
-                elem.params.fill = document.getElementById('ctrl-fill-color-text').value;
-                elem.params.lw = parseInt(document.getElementById('ctrl-shape-lw').value) || 2;
-                elem.params.radius = parseInt(document.getElementById('ctrl-shape-radius').value) || 12;
+                elem.params.fill = fill;
+                elem.params.lw = document.getElementById('ctrl-shape-lw').value;
+                elem.params.radius = document.getElementById('ctrl-shape-radius').value;
+                elem.params.gradType = document.getElementById('ctrl-grad-type').value;
+                elem.params.gradStops = document.getElementById('ctrl-grad-stops').value;
+                elem.params.gradAngle = document.getElementById('ctrl-grad-angle').value;
             }} else if (elem.type === 'drawImage') {{
                 elem.params.path = document.getElementById('ctrl-image-path').value;
-                elem.params.opacity = parseFloat(document.getElementById('ctrl-image-opacity').value) || 1.0;
+                elem.params.opacity = document.getElementById('ctrl-image-opacity').value;
+            }} else if (elem.type.startsWith('drawBarChart') || elem.type === 'drawLineChart' || elem.type === 'drawProgressBar') {{
+                elem.params.vals = document.getElementById('ctrl-chart-vals').value;
+                elem.params.labels = document.getElementById('ctrl-chart-labels').value;
+                elem.params.theme = document.getElementById('ctrl-chart-theme').value;
+                elem.params.gap = parseInt(document.getElementById('ctrl-chart-gap').value) || 15;
+                elem.params.radius = parseInt(document.getElementById('ctrl-chart-radius').value) || 6;
+                elem.params.maxval = document.getElementById('ctrl-chart-maxval').value;
+                elem.params.showlabels = document.getElementById('ctrl-chart-showlabels').checked;
             }}
 
             drawAll();
             updateLayersPanel();
         }}
 
-        // Deletes an element
+        // Delete elements
         function deleteElement(id) {{
             elements = elements.filter(el => el.id !== id);
             if (activeElementId === id) activeElementId = null;
@@ -980,7 +1247,7 @@ def generate_html(image_path, server_root, output_dir):
             updateLayersPanel();
         }}
 
-        // Reorders layers up or down
+        // Reorder layer indices
         function moveElement(id, direction) {{
             const idx = elements.findIndex(el => el.id === id);
             if (idx === -1) return;
@@ -997,7 +1264,7 @@ def generate_html(image_path, server_root, output_dir):
             updateLayersPanel();
         }}
 
-        // Re-renders all elements onto Visual HTML overlay
+        // Composed Elements drawing stack
         function drawAll() {{
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -1006,114 +1273,288 @@ def generate_html(image_path, server_root, output_dir):
             }});
         }}
 
+        // Visual gradients constructors
+        function createHTMLGradient(p, x, y, w, h) {{
+            let grad;
+            const px = parseCoord(x), py = parseCoord(y);
+            const pw = parseCoord(w), ph = parseCoord(h);
+            
+            if (p.gradType === 'radial') {{
+                const cx = px + pw/2, cy = py + ph/2;
+                const r = Math.max(pw, ph) / 2;
+                grad = ctx.createRadialGradient(cx, cy, 5, cx, cy, r);
+            }} else {{
+                // Linear gradient calculation with angle rotation
+                const angle = (parseFloat(p.gradAngle) || 90) * Math.PI / 180;
+                const x1 = px + pw/2 - Math.cos(angle) * pw/2;
+                const y1 = py + ph/2 - Math.sin(angle) * ph/2;
+                const x2 = px + pw/2 + Math.cos(angle) * pw/2;
+                const y2 = py + ph/2 + Math.sin(angle) * ph/2;
+                grad = ctx.createLinearGradient(x1, y1, x2, y2);
+            }}
+
+            // Parse color stops
+            const stops = resolveVars(p.gradStops).split(';');
+            stops.forEach(stop => {{
+                const parts = stop.split(',');
+                if (parts.length === 2) {{
+                    const color = parts[0].trim();
+                    const offset = parseFloat(parts[1].trim());
+                    if (!isNaN(offset) && offset >= 0 && offset <= 1) {{
+                        grad.addColorStop(offset, color);
+                    }}
+                }}
+            }});
+            return grad;
+        }}
+
+        // Visual Chart Themes
+        function getChartThemeColors(theme) {{
+            switch(theme) {{
+                case 'green': return ['#10b981', '#34d399', '#059669', '#6ee7b7', '#047857'];
+                case 'modern': return ['#a855f7', '#ec4899', '#8b5cf6', '#f472b6', '#6366f1'];
+                case 'dark': return ['#d97706', '#f59e0b', '#b45309', '#fbbf24', '#78350f'];
+                case 'neon': return ['#00f5ff', '#39ff14', '#ff007f', '#ffea00', '#9d00ff'];
+                case 'blue':
+                default: return ['#5865F2', '#3b82f6', '#1d4ed8', '#60a5fa', '#1e3a8a'];
+            }}
+        }}
+
         function drawElement(elem) {{
             const p = elem.params;
-            ctx.strokeStyle = p.color || "#ffffff";
-            ctx.fillStyle = p.fill === 'none' ? 'transparent' : (p.fill || 'transparent');
-            ctx.lineWidth = p.lw || 2;
             
+            // Parameter Resolving (Dynamic Mock Interpolations)
+            const px = parseCoord(p.x), py = parseCoord(p.y);
+            const pw = parseCoord(p.w), ph = parseCoord(p.h);
+            const pcolor = resolveVars(p.color) || "#ffffff";
+            const plw = parseCoord(p.lw) || 2;
+            const pradius = parseCoord(p.radius) || 0;
+
+            // Fill solver
+            if (p.fill === 'gradient') {{
+                ctx.fillStyle = createHTMLGradient(p, p.x, p.y, p.w, p.h);
+            }} else {{
+                ctx.fillStyle = p.fill === 'none' ? 'transparent' : (resolveVars(p.fill) || 'transparent');
+            }}
+            ctx.strokeStyle = pcolor;
+            ctx.lineWidth = plw;
+
             if (elem.type === 'drawRect') {{
                 ctx.beginPath();
-                ctx.rect(p.x, p.y, p.w, p.h);
+                ctx.rect(px, py, pw, ph);
                 if (p.fill !== 'none') ctx.fill();
-                if (p.lw > 0) ctx.stroke();
+                if (plw > 0) ctx.stroke();
             }} 
             else if (elem.type === 'drawRoundedRect') {{
                 ctx.beginPath();
-                ctx.roundRect(p.x, p.y, p.w, p.h, p.radius || 0);
+                ctx.roundRect(px, py, pw, ph, pradius);
                 if (p.fill !== 'none') ctx.fill();
-                if (p.lw > 0) ctx.stroke();
+                if (plw > 0) ctx.stroke();
             }} 
             else if (elem.type === 'drawCircle') {{
                 ctx.beginPath();
-                ctx.arc(p.x1, p.y1, p.radius, 0, 2 * Math.PI);
+                const pcx = parseCoord(p.x1), pcy = parseCoord(p.y1);
+                ctx.arc(pcx, pcy, pradius, 0, 2 * Math.PI);
                 if (p.fill !== 'none') ctx.fill();
-                if (p.lw > 0) ctx.stroke();
+                if (plw > 0) ctx.stroke();
             }} 
             else if (elem.type === 'drawLine') {{
                 ctx.beginPath();
-                ctx.moveTo(p.x1, p.y1);
-                ctx.lineTo(p.x2, p.y2);
+                ctx.moveTo(parseCoord(p.x1), parseCoord(p.y1));
+                ctx.lineTo(parseCoord(p.x2), parseCoord(p.y2));
                 ctx.stroke();
             }} 
             else if (elem.type === 'drawImage') {{
-                // Draw dotted boundary representation
                 ctx.setLineDash([6, 6]);
                 ctx.strokeStyle = '#5865F2';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(p.x, p.y, p.w, p.h);
+                ctx.strokeRect(px, py, pw, ph);
                 ctx.setLineDash([]);
                 
-                // Overlay text
                 ctx.fillStyle = 'rgba(88, 101, 242, 0.15)';
-                ctx.fillRect(p.x, p.y, p.w, p.h);
+                ctx.fillRect(px, py, pw, ph);
                 
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '12px Outfit';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('🖼️ ' + p.path.split('/').pop(), p.x + p.w/2, p.y + p.h/2);
+                ctx.fillText('🖼️ ' + resolveVars(p.path).split('/').pop(), px + pw/2, py + ph/2);
             }} 
             else if (elem.type === 'drawText') {{
-                ctx.font = `${{p.size}}px "${{p.font}}"`;
-                ctx.fillStyle = p.color;
+                const psize = parseCoord(p.size) || 24;
+                ctx.font = `${{psize}}px "${{p.font}}"`;
+                ctx.fillStyle = pcolor;
                 ctx.textAlign = p.anchor || 'left';
                 ctx.textBaseline = 'top';
-                ctx.fillText(p.text, p.x, p.y);
+                ctx.fillText(resolveVars(p.text), px, py);
             }} 
             else if (elem.type === 'drawTextMid') {{
-                // Box Mid Centering with auto-truncation simulation
-                ctx.font = `${{p.size}}px "${{p.font}}"`;
-                let displayStr = p.text;
+                const psize = parseCoord(p.size) || 24;
+                ctx.font = `${{psize}}px "${{p.font}}"`;
+                let displayStr = resolveVars(p.text);
                 let textW = ctx.measureText(displayStr).width;
-                if (textW > p.w) {{
+                if (textW > pw) {{
                     while (displayStr.length > 0) {{
                         displayStr = displayStr.slice(0, -1);
                         let checkW = ctx.measureText(displayStr + "...").width;
-                        if (checkW <= p.w) {{
+                        if (checkW <= pw) {{
                             displayStr += "...";
                             break;
                         }}
                     }}
                 }}
-                ctx.fillStyle = p.color;
+                ctx.fillStyle = pcolor;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(displayStr, p.x + p.w / 2, p.y + p.h / 2);
+                ctx.fillText(displayStr, px + pw / 2, py + ph / 2);
                 
-                // Draw text box bounding limit dashed
                 ctx.setLineDash([4, 4]);
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(p.x, p.y, p.w, p.h);
+                ctx.strokeRect(px, py, pw, ph);
                 ctx.setLineDash([]);
             }} 
             else if (elem.type === 'drawTextIn') {{
-                // Box In Centering with dynamic scaling simulation
-                let curSize = p.size;
+                const psize = parseCoord(p.size) || 24;
+                let curSize = psize;
+                const textStr = resolveVars(p.text);
                 ctx.font = `${{curSize}}px "${{p.font}}"`;
                 
                 while (curSize > 4) {{
                     ctx.font = `${{curSize}}px "${{p.font}}"`;
-                    let metrics = ctx.measureText(p.text);
-                    if (metrics.width <= p.w && curSize <= p.h) {{
+                    let metrics = ctx.measureText(textStr);
+                    if (metrics.width <= pw && curSize <= ph) {{
                         break;
                     }}
                     curSize--;
                 }}
                 
-                ctx.fillStyle = p.color;
+                ctx.fillStyle = pcolor;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.font = `${{curSize}}px "${{p.font}}"`;
-                ctx.fillText(p.text, p.x + p.w / 2, p.y + p.h / 2);
+                ctx.fillText(textStr, px + pw / 2, py + ph / 2);
                 
-                // Draw text box bounding limit dashed
                 ctx.setLineDash([4, 4]);
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(p.x, p.y, p.w, p.h);
+                ctx.strokeRect(px, py, pw, ph);
                 ctx.setLineDash([]);
+            }}
+            // Advanced Data Charts Simulators
+            else if (elem.type === 'drawProgressBar') {{
+                // Outer bar background container
+                ctx.beginPath();
+                ctx.roundRect(px, py, pw, ph, pradius);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.stroke();
+
+                // Inner progress filled bar
+                const vals = resolveVars(p.vals).split(',').map(Number);
+                const curVal = vals[0] || 50;
+                const maxVal = vals[1] || 100;
+                const progressW = Math.max(10, Math.min(pw, (curVal / maxVal) * pw));
+                
+                ctx.beginPath();
+                ctx.roundRect(px, py, progressW, ph, pradius);
+                const colors = getChartThemeColors(p.theme);
+                ctx.fillStyle = colors[0];
+                ctx.fill();
+            }}
+            else if (elem.type === 'drawBarChart') {{
+                const vals = resolveVars(p.vals).split(',').map(Number);
+                const labels = resolveVars(p.labels).split(',');
+                const maxVal = parseFloat(resolveVars(p.maxval)) || Math.max(...vals) || 100;
+                
+                const colors = getChartThemeColors(p.theme);
+                const gap = parseInt(p.gap) || 15;
+                const barW = (pw - (vals.length - 1) * gap) / vals.length;
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+                ctx.fillRect(px, py, pw, ph);
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.strokeRect(px, py, pw, ph);
+
+                for (let i = 0; i < vals.length; i++) {{
+                    const val = vals[i];
+                    const barH = (val / maxVal) * (ph - 30);
+                    const barX = px + i * (barW + gap);
+                    const barY = py + ph - 25 - barH;
+                    
+                    ctx.beginPath();
+                    // Top rounding top-left & top-right only
+                    ctx.roundRect(barX, barY, barW, barH, [pradius, pradius, 0, 0]);
+                    ctx.fillStyle = colors[i % colors.length];
+                    ctx.fill();
+
+                    if (p.showlabels) {{
+                        ctx.fillStyle = '#a5a5cc';
+                        ctx.font = '10px Outfit';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(labels[i] || '', barX + barW/2, py + ph - 20);
+                        
+                        // Value over bar
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText(val, barX + barW/2, barY - 12);
+                    }}
+                }}
+            }}
+            else if (elem.type === 'drawLineChart') {{
+                const vals = resolveVars(p.vals).split(',').map(Number);
+                const labels = resolveVars(p.labels).split(',');
+                const maxVal = parseFloat(resolveVars(p.maxval)) || Math.max(...vals) || 100;
+                
+                const colors = getChartThemeColors(p.theme);
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+                ctx.fillRect(px, py, pw, ph);
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.strokeRect(px, py, pw, ph);
+
+                const segW = pw / (vals.length - 1 || 1);
+                const points = [];
+
+                for (let i = 0; i < vals.length; i++) {{
+                    const val = vals[i];
+                    const pointX = px + i * segW;
+                    const pointY = py + ph - 25 - (val / maxVal) * (ph - 40);
+                    points.push({{x: pointX, y: pointY}});
+                }}
+
+                // Draw line connection segments
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {{
+                    ctx.lineTo(points[i].x, points[i].y);
+                }}
+                ctx.strokeStyle = colors[0];
+                ctx.lineWidth = plw || 3;
+                ctx.stroke();
+
+                // Draw points and labels
+                for (let i = 0; i < points.length; i++) {{
+                    ctx.beginPath();
+                    ctx.arc(points[i].x, points[i].y, 5, 0, 2*Math.PI);
+                    ctx.fillStyle = colors[1 % colors.length];
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+
+                    if (p.showlabels) {{
+                        ctx.fillStyle = '#a5a5cc';
+                        ctx.font = '10px Outfit';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(labels[i] || '', points[i].x, py + ph - 20);
+                        
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText(vals[i], points[i].x, points[i].y - 12);
+                    }}
+                }}
             }}
         }}
 
@@ -1130,7 +1571,7 @@ def generate_html(image_path, server_root, output_dir):
             let nw = Math.abs(w);
             let nh = Math.abs(h);
 
-            if (activeTool === 'drawRect' || activeTool === 'drawRoundedRect' || activeTool === 'drawImage' || activeTool === 'drawTextMid' || activeTool === 'drawTextIn') {{
+            if (activeTool === 'drawRect' || activeTool === 'drawRoundedRect' || activeTool === 'drawImage' || activeTool.startsWith('drawText') || activeTool.startsWith('drawBarChart') || activeTool === 'drawLineChart' || activeTool === 'drawProgressBar') {{
                 ctx.strokeRect(nx, ny, nw, nh);
             }} 
             else if (activeTool === 'drawCircle') {{
@@ -1157,12 +1598,18 @@ def generate_html(image_path, server_root, output_dir):
                 case 'drawText':
                     return `$drawText[${{p.x}};${{p.y}};${{p.text}};${{p.color}};${{p.size}};${{p.font}};${{p.anchor}}]`;
                 case 'drawTextMid':
-                    return `$drawTextMid[${{p.x}};${{p.y}};${{p.x + p.w}};${{p.y + p.h}};${{p.text}};${{p.color}};${{p.size}};${{p.font}}]`;
+                    return `$drawTextMid[${{p.x}};${{p.y}};${{p.x + parseInt(p.w)}};${{p.y + parseInt(p.h)}};${{p.text}};${{p.color}};${{p.size}};${{p.font}}]`;
                 case 'drawTextIn':
-                    return `$drawTextIn[${{p.x}};${{p.y}};${{p.x + p.w}};${{p.y + p.h}};${{p.text}};${{p.color}};${{p.size}};${{p.font}}]`;
+                    return `$drawTextIn[${{p.x}};${{p.y}};${{p.x + parseInt(p.w)}};${{p.y + parseInt(p.h)}};${{p.text}};${{p.color}};${{p.size}};${{p.font}}]`;
                 case 'drawRect':
+                    if (p.fill === 'gradient') {{
+                        return `$drawRect[x=${{p.x}};y=${{p.y}};w=${{p.w}};h=${{p.h}};color=${{p.color}};fill=gradient;lw=${{p.lw}}]\\n$drawLinearGradient[x=${{p.x}};y=${{p.y}};w=${{p.w}};h=${{p.h}};stops="${{p.gradStops}}";angle=${{p.gradAngle}}]`;
+                    }}
                     return `$drawRect[x=${{p.x}};y=${{p.y}};w=${{p.w}};h=${{p.h}};color=${{p.color}};fill=${{p.fill}};lw=${{p.lw}}]`;
                 case 'drawRoundedRect':
+                    if (p.fill === 'gradient') {{
+                        return `$drawRoundedRect[x=${{p.x}};y=${{p.y}};w=${{p.w}};h=${{p.h}};radius=${{p.radius}};color=${{p.color}};fill=gradient;lw=${{p.lw}}]\\n$drawLinearGradient[x=${{p.x}};y=${{p.y}};w=${{p.w}};h=${{p.h}};stops="${{p.gradStops}}";angle=${{p.gradAngle}}]`;
+                    }}
                     return `$drawRoundedRect[x=${{p.x}};y=${{p.y}};w=${{p.w}};h=${{p.h}};radius=${{p.radius}};color=${{p.color}};fill=${{p.fill}};lw=${{p.lw}}]`;
                 case 'drawCircle':
                     return `$drawCircle[cx=${{p.x1}};cy=${{p.y1}};radius=${{p.radius}};color=${{p.color}};fill=${{p.fill}};lw=${{p.lw}}]`;
@@ -1170,12 +1617,255 @@ def generate_html(image_path, server_root, output_dir):
                     return `$drawLine[${{p.x1}};${{p.y1}};${{p.x2}};${{p.y2}};${{p.color}};${{p.lw}}]`;
                 case 'drawImage':
                     return `$drawImage[${{p.x}};${{p.y}};${{p.path}};${{p.w}};${{p.h}};${{p.opacity}}]`;
+                case 'drawProgressBar':
+                    return `$drawProgressBar[${{p.x}};${{p.y}};${{p.w}};${{p.h}};val=${{p.vals}};max=${{p.maxval || 100}};theme=${{p.theme}};radius=${{p.radius}}]`;
+                case 'drawBarChart':
+                    return `$drawBarChart[${{p.x}};${{p.y}};${{p.w}};${{p.h}};vals=${{p.vals}};labels=${{p.labels}};theme=${{p.theme}};gap=${{p.gap}};show_lab=${{p.showlabels}};radius=${{p.radius}};max_val=${{p.maxval}}]`;
+                case 'drawLineChart':
+                    return `$drawLineChart[${{p.x}};${{p.y}};${{p.w}};${{p.h}};vals=${{p.vals}};labels=${{p.labels}};theme=${{p.theme}};lw=${{p.lw}};show_lab=${{p.showlabels}};max_val=${{p.maxval}}]`;
                 default:
                     return "";
             }}
         }}
 
-        // Composed Layers & Cards list UI updates
+        // Reverse Template Parser (Import Code)
+        function parseParams(paramStr) {{
+            const parts = paramStr.split(';');
+            const named = {{}};
+            const positional = [];
+            
+            parts.forEach((part, index) => {{
+                const trimmed = part.trim();
+                if (trimmed.includes('=')) {{
+                    const [k, v] = trimmed.split('=');
+                    named[k.trim()] = v.trim();
+                }} else {{
+                    positional.push(trimmed);
+                }}
+            }});
+            
+            return {{ named, positional }};
+        }}
+
+        function importAlphaPILCode() {{
+            const code = document.getElementById('import-code-area').value;
+            if (!code.trim()) return;
+
+            const lines = code.split('\\n');
+            const funcRegex = /\\$(\\w+)\\s*\\[(.*?)\\]/g;
+            
+            elements = []; // Reset visual designer layers
+            
+            lines.forEach(line => {{
+                let match;
+                // Reset regex state
+                funcRegex.lastIndex = 0;
+                
+                while ((match = funcRegex.exec(line)) !== null) {{
+                    const func = match[1];
+                    const paramStr = match[2];
+                    const p = parseParams(paramStr);
+                    
+                    if (func === 'createCanvas') {{
+                        const w = parseInt(p.positional[0]) || 1080;
+                        const h = parseInt(p.positional[1]) || 1620;
+                        document.getElementById('canvas-w').value = w;
+                        document.getElementById('canvas-h').value = h;
+                        resizeCanvasVisuals();
+                    }}
+                    else if (func === 'drawRect') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawRect',
+                            params: {{
+                                x: p.named.x || p.positional[0] || '0',
+                                y: p.named.y || p.positional[1] || '0',
+                                w: parseInt(p.named.w || p.positional[2]) || 100,
+                                h: parseInt(p.named.h || p.positional[3]) || 100,
+                                color: p.named.color || p.named.outline || p.positional[4] || '#ffffff',
+                                fill: p.named.fill || p.positional[6] || 'none',
+                                lw: p.named.lw || p.positional[7] || '2',
+                                radius: p.named.radius || p.positional[8] || '0'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawRoundedRect') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawRoundedRect',
+                            params: {{
+                                x: p.named.x || p.positional[0] || '0',
+                                y: p.named.y || p.positional[1] || '0',
+                                w: parseInt(p.named.w || p.positional[2]) || 100,
+                                h: parseInt(p.named.h || p.positional[3]) || 100,
+                                radius: p.named.radius || p.positional[4] || '12',
+                                color: p.named.color || p.named.outline || p.positional[5] || '#ffffff',
+                                fill: p.named.fill || p.positional[7] || 'none',
+                                lw: p.named.lw || p.positional[8] || '2'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawCircle') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawCircle',
+                            params: {{
+                                x1: p.named.cx || p.positional[0] || '0',
+                                y1: p.named.cy || p.positional[1] || '0',
+                                cx: p.named.cx || p.positional[0] || '0',
+                                cy: p.named.cy || p.positional[1] || '0',
+                                radius: parseInt(p.named.radius || p.positional[2]) || 50,
+                                color: p.named.color || p.positional[3] || '#ffffff',
+                                fill: p.named.fill || p.positional[5] || 'none',
+                                lw: p.named.lw || p.positional[6] || '2'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawLine') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawLine',
+                            params: {{
+                                x1: p.positional[0] || '0',
+                                y1: p.positional[1] || '0',
+                                x2: p.positional[2] || '100',
+                                y2: p.positional[3] || '100',
+                                color: p.positional[4] || '#ffffff',
+                                lw: p.positional[5] || '2'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawText') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawText',
+                            params: {{
+                                x: p.positional[0] || '0',
+                                y: p.positional[1] || '0',
+                                text: p.positional[2] || 'Hello',
+                                color: p.positional[3] || '#ffffff',
+                                size: p.positional[4] || '24',
+                                font: p.positional[5] || 'Arial',
+                                anchor: p.positional[6] || 'left'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawTextMid') {{
+                        const x1 = parseInt(p.positional[0]) || 0;
+                        const y1 = parseInt(p.positional[1]) || 0;
+                        const x2 = parseInt(p.positional[2]) || 100;
+                        const y2 = parseInt(p.positional[3]) || 100;
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawTextMid',
+                            params: {{
+                                x: x1,
+                                y: y1,
+                                w: x2 - x1,
+                                h: y2 - y1,
+                                text: p.positional[4] || 'Hello',
+                                color: p.positional[5] || '#ffffff',
+                                size: p.positional[6] || '24',
+                                font: p.positional[7] || 'Arial'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawTextIn') {{
+                        const x1 = parseInt(p.positional[0]) || 0;
+                        const y1 = parseInt(p.positional[1]) || 0;
+                        const x2 = parseInt(p.positional[2]) || 100;
+                        const y2 = parseInt(p.positional[3]) || 100;
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawTextIn',
+                            params: {{
+                                x: x1,
+                                y: y1,
+                                w: x2 - x1,
+                                h: y2 - y1,
+                                text: p.positional[4] || 'Hello',
+                                color: p.positional[5] || '#ffffff',
+                                size: p.positional[6] || '24',
+                                font: p.positional[7] || 'Arial'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawImage') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawImage',
+                            params: {{
+                                x: p.positional[0] || '0',
+                                y: p.positional[1] || '0',
+                                path: p.positional[2] || 'resources/theme-irman.png',
+                                w: parseInt(p.positional[3]) || 150,
+                                h: parseInt(p.positional[4]) || 150,
+                                opacity: p.positional[5] || '1.0'
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawBarChart') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawBarChart',
+                            params: {{
+                                x: p.positional[0] || '0',
+                                y: p.positional[1] || '0',
+                                w: parseInt(p.positional[2]) || 300,
+                                h: parseInt(p.positional[3]) || 180,
+                                vals: p.named.vals || p.positional[4] || '10,20,30',
+                                labels: p.named.labels || p.positional[5] || 'A,B,C',
+                                theme: p.named.theme || p.positional[6] || 'blue',
+                                gap: parseInt(p.named.gap || p.positional[8]) || 15,
+                                radius: parseInt(p.named.radius || p.positional[12]) || 6,
+                                maxval: p.named.max_val || p.positional[13] || '',
+                                showlabels: true
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawLineChart') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawLineChart',
+                            params: {{
+                                x: p.positional[0] || '0',
+                                y: p.positional[1] || '0',
+                                w: parseInt(p.positional[2]) || 300,
+                                h: parseInt(p.positional[3]) || 180,
+                                vals: p.named.vals || p.positional[4] || '10,20,30',
+                                labels: p.named.labels || p.positional[5] || 'A,B,C',
+                                theme: p.named.theme || p.positional[6] || 'blue',
+                                lw: p.named.lw || p.positional[7] || '2',
+                                maxval: p.named.max_val || p.positional[9] || '',
+                                showlabels: true
+                            }}
+                        }});
+                    }}
+                    else if (func === 'drawProgressBar') {{
+                        elements.push({{
+                            id: Date.now() + Math.random(),
+                            type: 'drawProgressBar',
+                            params: {{
+                                x: p.positional[0] || '0',
+                                y: p.positional[1] || '0',
+                                w: parseInt(p.positional[2]) || 200,
+                                h: parseInt(p.positional[3]) || 24,
+                                vals: p.named.val || p.positional[4] || '50',
+                                maxval: p.named.max || p.positional[5] || '100',
+                                theme: p.named.theme || p.positional[6] || 'blue',
+                                radius: p.named.radius || p.positional[9] || '12'
+                            }}
+                        }});
+                    }}
+                }}
+            }});
+
+            drawAll();
+            updateLayersPanel();
+            showToast("Template imported and parsed successfully!");
+        }}
+
+        // Dynamic Layout listing
         function updateLayersPanel() {{
             const listContainer = document.getElementById('layers-list-container');
             const layersCard = document.getElementById('layers-card');
@@ -1197,12 +1887,9 @@ def generate_html(image_path, server_root, output_dir):
             // Generate full template text
             let fullTemplate = `$createCanvas[${{canvas.width}};${{canvas.height}};#0c0c14;2;false;1]\\n\\n`;
             
-            // Loop backwards (bottom-up index drawing)
             elements.forEach((elem, index) => {{
                 fullTemplate += generateCode(elem) + "\\n";
                 
-                // Add list layer item
-                const activeClass = elem.id === activeElementId ? 'style="border-color:#5865F2; background:rgba(88,101,242,0.06)"' : '';
                 const item = document.createElement('div');
                 item.className = 'layer-item';
                 item.innerHTML = `
@@ -1210,7 +1897,7 @@ def generate_html(image_path, server_root, output_dir):
                         <span>${{index + 1}}.</span>
                         <span>${{getLayerIcon(elem.type)}}</span>
                         <strong>${{elem.type}}</strong>
-                        <span style="color:#8c8caf; font-size:10px;">(${{elem.params.x || elem.params.x1}}, ${{elem.params.y || elem.params.y1}})</span>
+                        <span style="color:#8c8caf; font-size:9px;">(${{elem.params.x || elem.params.x1}}, ${{elem.params.y || elem.params.y1}})</span>
                     </div>
                     <div class="layer-actions">
                         <button class="layer-action-btn move" onclick="moveElement(${{elem.id}}, 'up')" title="Move Up">⬆️</button>
@@ -1228,7 +1915,6 @@ def generate_html(image_path, server_root, output_dir):
             fullTemplate += `\\n$save[output.png]`;
             fullTemplateArea.value = fullTemplate;
 
-            // Update active snippet display
             if (activeElementId) {{
                 const actElem = elements.find(el => el.id === activeElementId);
                 activeSnippet.innerText = generateCode(actElem);
@@ -1243,7 +1929,6 @@ def generate_html(image_path, server_root, output_dir):
             if (elem) {{
                 setTool(elem.type);
                 
-                // Load params into settings panel
                 if (elem.type.startsWith('drawText')) {{
                     document.getElementById('ctrl-text-content').value = elem.params.text;
                     document.getElementById('ctrl-font-family').value = elem.params.font;
@@ -1254,16 +1939,36 @@ def generate_html(image_path, server_root, output_dir):
                 }} else if (elem.type === 'drawRect' || elem.type === 'drawRoundedRect' || elem.type === 'drawCircle' || elem.type === 'drawLine') {{
                     document.getElementById('ctrl-outline-color-text').value = elem.params.color;
                     document.getElementById('ctrl-outline-color-picker').value = elem.params.color.startsWith('#') ? elem.params.color : '#ffffff';
-                    document.getElementById('ctrl-fill-color-text').value = elem.params.fill;
-                    document.getElementById('ctrl-fill-none').checked = elem.params.fill === 'none';
-                    if (elem.params.fill !== 'none' && elem.params.fill.startsWith('#')) {{
-                        document.getElementById('ctrl-fill-color-picker').value = elem.params.fill;
+                    
+                    const fill = elem.params.fill;
+                    if (fill === 'none') {{
+                        document.getElementById('ctrl-fill-mode').value = 'none';
+                    }} else if (fill === 'gradient') {{
+                        document.getElementById('ctrl-fill-mode').value = 'gradient';
+                    }} else {{
+                        document.getElementById('ctrl-fill-mode').value = 'solid';
+                        document.getElementById('ctrl-fill-color-text').value = fill;
+                        if (fill.startsWith('#')) document.getElementById('ctrl-fill-color-picker').value = fill;
                     }}
+                    
                     document.getElementById('ctrl-shape-lw').value = elem.params.lw;
                     document.getElementById('ctrl-shape-radius').value = elem.params.radius;
+                    document.getElementById('ctrl-grad-type').value = elem.params.gradType || 'linear';
+                    document.getElementById('ctrl-grad-stops').value = elem.params.gradStops || '#ff0000,0;#0000ff,1';
+                    document.getElementById('ctrl-grad-angle').value = elem.params.gradAngle || '90';
+                    
+                    toggleFillMode(document.getElementById('ctrl-fill-mode').value);
                 }} else if (elem.type === 'drawImage') {{
                     document.getElementById('ctrl-image-path').value = elem.params.path;
                     document.getElementById('ctrl-image-opacity').value = elem.params.opacity;
+                }} else if (elem.type.startsWith('drawBarChart') || elem.type === 'drawLineChart' || elem.type === 'drawProgressBar') {{
+                    document.getElementById('ctrl-chart-vals').value = elem.params.vals;
+                    document.getElementById('ctrl-chart-labels').value = elem.params.labels;
+                    document.getElementById('ctrl-chart-theme').value = elem.params.theme;
+                    document.getElementById('ctrl-chart-gap').value = elem.params.gap;
+                    document.getElementById('ctrl-chart-radius').value = elem.params.radius;
+                    document.getElementById('ctrl-chart-maxval').value = elem.params.maxval;
+                    document.getElementById('ctrl-chart-showlabels').checked = elem.params.showlabels;
                 }}
             }}
             updateLayersPanel();
@@ -1279,22 +1984,25 @@ def generate_html(image_path, server_root, output_dir):
                 case 'drawCircle': return '🟡';
                 case 'drawLine': return '➖';
                 case 'drawImage': return '🖼️';
+                case 'drawBarChart': return '📊';
+                case 'drawLineChart': return '📈';
+                case 'drawProgressBar': return '⏳';
                 default: return '📍';
             }}
         }}
 
-        // Copy utilities
+        // Clipboard copy controls
         function copyActiveCode() {{
             const code = document.getElementById('active-snippet-text').innerText;
             if (code && code !== "Click and drag canvas to generate code") {{
-                copyText(code, "Copied active snippet code to clipboard!");
+                copyText(code, "Copied active snippet!");
             }}
         }}
 
         function copyFullTemplate() {{
             const code = document.getElementById('full-template-code').value;
             if (code) {{
-                copyText(code, "Copied full composed template to clipboard!");
+                copyText(code, "Copied full composed template!");
             }}
         }}
 
@@ -1320,14 +2028,13 @@ def generate_html(image_path, server_root, output_dir):
             }}, 2200);
         }}
 
-        // Image drag and drop dynamic load
+        // Dynamic Background swaps
         function loadFile(e) {{
             const file = e.target.files[0];
             if (file) {{
                 const reader = new FileReader();
                 reader.onload = function(event) {{
                     img.src = event.target.result;
-                    // Reset elements array
                     elements = [];
                     activeElementId = null;
                     updateLayersPanel();
@@ -1335,32 +2042,6 @@ def generate_html(image_path, server_root, output_dir):
                 reader.readAsDataURL(file);
             }}
         }}
-
-        const dropArea = document.querySelector('.upload-area');
-        dropArea.addEventListener('dragover', (e) => {{
-            e.preventDefault();
-            dropArea.style.borderColor = '#5865F2';
-        }});
-
-        dropArea.addEventListener('dragleave', () => {{
-            dropArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-        }});
-
-        dropArea.addEventListener('drop', (e) => {{
-            e.preventDefault();
-            dropArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {{
-                const reader = new FileReader();
-                reader.onload = function(event) {{
-                    img.src = event.target.result;
-                    elements = [];
-                    activeElementId = null;
-                    updateLayersPanel();
-                }}
-                reader.readAsDataURL(file);
-            }}
-        }});
     </script>
 </body>
 </html>"""

@@ -4,6 +4,22 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 26, 2026 (v0.3.0)
+!!! abstract "Feature Release: Interactive WYSIWYG Visual Template IDE"
+    This major release upgrades the Visual Designer into a fully featured template IDE! You can now import existing AlphaPIL code via reverse-parsing, inspect and render actual local system fonts, test dynamic layouts with mock variable interpolation (`{user}` placeholders), sketch multi-stop linear/radial gradients, resize canvas dimensions, and visually compose advanced charts & graphs ($drawBarChart, $drawLineChart, $drawProgressBar) with live rendering simulations.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **💻 IDE** | **Reverse Parser** | Paste and import any hand-written AlphaPIL code directly into editable visual layers. | [Docs](functions/utils/open_coordinate_picker.md) |
+    | **🔤 Typography** | **Local Fonts Discovery** | Discovers actual system fonts on launch and feeds a searchable dropdown inside the Web UI. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **📊 Visualization** | **Simulated Charts** | Real-time HTML Canvas simulations for Bar Charts, Line Charts, and Progress Bars. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **🌈 Gradients** | **Gradient Builder** | Sketched linear/radial gradient builder inside shapes with angle rotations and multi-stops. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **🤖 Interpolation** | **Mock Variables Inspector**| Supports testing `{var}` placeholders live under customizable test variables. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **📏 Dimensions** | **Canvas Resize** | Visually modify, scale, and adjust background canvas dimensions dynamically. | [Docs](functions/utils/open_coordinate_picker.md#features) |
+    | **🤖 AI** | **Manifest v0.3.0** | Synchronized technical manifest version with the new WYSIWYG Visual Template IDE. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 26, 2026 (v0.2.9)
 !!! abstract "Feature Release: Interactive WYSIWYG Visual Template Designer"
     This release upgrades the coordinate picker into a fully fledged visual designer! You can now visually draw text bounding boxes, rectangles, circles, rounded rectangles, and lines directly over your image, manage layering/composition, see live client-side rendering simulations, and instantly copy single snippets or complete multi-line AlphaPIL template code block compositions.

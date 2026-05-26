@@ -58,6 +58,15 @@ engine.open_coordinate_picker("output.png")
 
 ## Features
 
+- **💻 Reverse Template Parser (Import Engine)**: Paste any pre-existing AlphaPIL code into the import panel to instantly parse it line-by-line and load it as editable visual designer layers.
+- **🔤 Local Font Discoverer**: Searches and detects all system fonts installed on the computer at server launch and loads them into a searchable dropdown menu inside the Web UI.
+- **📊 Simulated Charts & Graphs**: Real-time canvas overlay rendering engines simulating:
+  - `$drawBarChart` (spacing, gaps, color themes, rounding radius, bottom labels).
+  - `$drawLineChart` (segment connecting, node points, vertex indicators).
+  - `$drawProgressBar` (progress track, rounded fill states).
+- **🌈 Gradients Builder**: Multi-stop linear or radial gradients customizer. Customize color stops and slide gradient angles dynamically.
+- **🤖 Mock Variables Inspector**: Supports testing `{variable_name}` placeholder interpolation live on the canvas. Simply define mock variables in the sidebar dashboard to test dynamic text, colors, and coordinates.
+- **📏 Canvas Resize controls**: Drag handles or specify exact canvas widths and heights to visually scale the template canvas.
 - **🎯 WYSIWYG Interactive Designer**: Click and drag directly on your canvas to visually draw bounding boxes, circles, rounded rectangles, lines, and text.
 - **🔤 Real-Time Client-Side Simulation**:
   - `drawTextMid` Centering & Truncation: Centered text box alignment that dynamically clips overflowing text and appends `...` natively inside the browser context.
@@ -67,4 +76,5 @@ engine.open_coordinate_picker("output.png")
 - **🎯 Real-Time Crosshair Reticles**: Live pixel-precise crosshair reticles overlaying the canvas.
 - **🔍 Perfect Scale Tracking**: Mouse interactions are automatically translated to coordinate spaces relative to the *original, natural dimensions* of the background image, regardless of browser scaling.
 - **📁 Dynamic Background Drag-and-Drop**: Easily drag and drop any image or browse to swap canvas backgrounds without restarting the local HTTP server.
+
 
