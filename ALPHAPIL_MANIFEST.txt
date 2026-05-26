@@ -1,4 +1,4 @@
-ALPHAPIL TECHNICAL MANIFEST (V0.2.7)
+ALPHAPIL TECHNICAL MANIFEST (V0.2.8)
 ====================================
 Guide for AI Agents to write professional AlphaPIL templates.
 
@@ -91,3 +91,15 @@ $function[name;args;body] (Custom macros: {arg1})
    - scale=3 outputs at 3x resolution (e.g. 420x520 → 1260x1560).
    - aa=2 gives smooth edges without the massive memory cost of aa=8.
    - The engine automatically applies UnsharpMask sharpening after downsampling.
+
+6. VISUAL COORDINATE PICKER (NEW)
+---------------------------------
+To easily inspect, find, and copy pixel coordinates on any generated canvas:
+- COMMAND LINE INTERFACE:
+  `alphapil-picker <path_to_image>`
+- PYTHON PROGRAMMATIC API:
+  `from alphapil import open_coordinate_picker`
+  `open_coordinate_picker("<path_to_image>")`
+- CANVAS ENGINE CONVENIENCE:
+  `engine.open_coordinate_picker("<path_to_image>")`
+This spins up a premium local HTML/JS Web server with crosshair reticles, real-time pixel scaling, single-click copy, and drag-and-drop support.
