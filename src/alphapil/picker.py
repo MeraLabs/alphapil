@@ -123,8 +123,6 @@ def generate_html(image_path, server_root, output_dir):
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 24px;
             display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
             position: relative;
             min-height: 650px;
@@ -141,6 +139,7 @@ def generate_html(image_path, server_root, output_dir):
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.12);
             transition: width 0.2s, height 0.2s;
+            margin: auto;
         }}
 
         #target-img {{
@@ -2054,7 +2053,7 @@ def generate_html(image_path, server_root, output_dir):
 </body>
 </html>"""
     
-    html_path = os.path.join(output_dir, 'alphapil_coordinate_picker.html')
+    html_path = os.path.join(output_dir, 'alphapil_ide_visualizer.html')
     with open(html_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
         
