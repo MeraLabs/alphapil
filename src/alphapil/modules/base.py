@@ -193,15 +193,23 @@ class AlphaMixin:
     # State Management Commands
     # -------------------------
 
-    def _cmd_set_font(self, font_name: str, size: str = None) -> str:
-        """Set current font and size."""
+    def _cmd_set_font(self, font_name: str, size: str = None, variation: str = None) -> str:
+        """Set current font, size, and optional variation (e.g. wght=700)."""
         try:
             self._set_state('font', font_name)
             if size:
                 self._set_state('font_size', self._parse_num(size))
-            return f"Font set to {font_name}" + (f" size {size}" if size else "")
+            if variation:
+                self._set_state('font_variation', variation)
+            else:
+                self._set_state('font_variation', None)
+            
+            msg = f"Font set to {font_name}"
+            if size: msg += f" size {size}"
+            if variation: msg += f" variation {variation}"
+            return msg
         except Exception as e:
-            raise ValueError(f"{e}\nProper Syntax: $setFont[font_path;size]")
+            raise ValueError(f"{e}\nProper Syntax: $setFont[font_path;size;variation]")
 
     def _cmd_set_color(self, color: str) -> str:
         """Set current default color."""

@@ -4,6 +4,17 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 26, 2026 (v0.2.6)
+!!! abstract "Feature Release: Variable Fonts Support"
+    This release introduces native support for OpenType variable fonts, giving you dynamic control over font weights, widths, slants, and custom variations directly in your templates.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🔤 Layout** | **Variable Fonts** | Added dynamic variable font axis selection (`wght=700`, `Bold`, etc.) to `$setFont` and `$drawText`. | [Docs](functions/text/drawText.md) |
+    | **🤖 AI** | **Manifest v0.2.6** | Synchronized technical manifest with the package version 0.2.6. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 26, 2026 (v0.2.5)
 !!! abstract "Patch Update: Fixed \$useImageAsCanvas Dimension Resolution"
     This patch resolves a critical bug where `$useImageAsCanvas` would crash due to the lack of an existing canvas when resolving its fixed dimensions.

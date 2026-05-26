@@ -5,7 +5,7 @@ Draws text onto the canvas with specified styling, alignment, outline strokes, s
 ## Syntax
 
 ```bash
-$drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors;line_height;letter_spacing]
+$drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors;line_height;letter_spacing;variation]
 ```
 
 ## Parameters
@@ -30,6 +30,7 @@ $drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;
 | **gradient_colors**| `string`| Comma-separated gradient colors (e.g. `gold,orange`). | `None` |
 | **line_height**| `float` | Line spacing multiplier for wrapped text (e.g. `1.2`). | `1.0` |
 | **letter_spacing**| `int` | Tracking (letter-spacing) in pixels. | `0` |
+| **variation** | `string` | Variable font axes (e.g. `wght=700` or `wght=500,wdth=110`) or variation name. | `None` |
 
 ## Examples
 
@@ -54,5 +55,18 @@ $drawText[
     gradient_colors=gold,orange;
     stroke_width=3;stroke_fill=black;
     shadow_color=black/60;shadow_offset=5,5
+]
+```
+
+### Variable Font Weight Control
+Using named arguments, you can dynamically configure any axis of a variable font:
+```bash
+$drawText[
+    x=center;y=400;
+    text=VARIABLE FONT;
+    color=white;
+    size=48;
+    font=myVariableFont;
+    variation=wght=800
 ]
 ```

@@ -1,4 +1,4 @@
-ALPHAPIL TECHNICAL MANIFEST (V0.2.5)
+ALPHAPIL TECHNICAL MANIFEST (V0.2.6)
 ====================================
 Guide for AI Agents to write professional AlphaPIL templates.
 
@@ -32,7 +32,7 @@ Guide for AI Agents to write professional AlphaPIL templates.
 
 --- CORE ---
 $createCanvas[width;height;color;aa;strict;scale]
-$save[filename] | $setVar[name;value] | $getVar[name;default] | $setFont[name_or_alias;size]
+$save[filename] | $setVar[name;value] | $getVar[name;default] | $setFont[name_or_alias;size;variation]
 $startContainer[x;y;w;h;padding;anchor] | $endContainer[]
 $startClip[x;y;w;h;radius] | $endClip[]
 $getSystemFonts[] | $getErrors[] | $getBytes[format]
@@ -48,7 +48,7 @@ $drawStar[x;y;points;outer_r;inner_r;color;outline;fill;lw]
 $drawArc[x;y;w;h;start;end;color;width]
 
 --- TEXT ---
-$drawText[x;y;text;color;size;font;anchor;sw;sf;shadow_c;shadow_off;glow_c;glow_r;max_w;trunc_w;grad;line_h;tracking]
+$drawText[x;y;text;color;size;font;anchor;sw;sf;shadow_c;shadow_off;glow_c;glow_r;max_w;trunc_w;grad;line_h;tracking;variation]
 - line_h: Line spacing multiplier (e.g. 1.2)
 - tracking: Letter spacing in pixels.
 $drawTextMid[x1;y1;x2;y2;text;...] | $drawTextIn[x;y;w;h;text;...]

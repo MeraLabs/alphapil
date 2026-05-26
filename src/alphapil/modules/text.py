@@ -84,50 +84,88 @@ class TextMixin(AlphaMixin):
         names = sorted(list(set([k for k in self._system_fonts.keys() if not k.endswith(('.ttf', '.otf'))])))
         return "; ".join(names)
 
-    def _get_font(self, size: Union[str, int], font_path: str = None) -> ImageFont.ImageFont:
+    def _apply_font_variation(self, font: ImageFont.FreeTypeFont, variation: str) -> None:
+        if not variation or not hasattr(font, 'set_variation_by_name'):
+            return
+        import re
+        try:
+            # Check if it looks like axes key-value pairs (e.g. "wght=700,wdth=100")
+            if '=' in variation or ':' in variation:
+                axes = {}
+                parts = re.split(r'[;,]', variation)
+                for part in parts:
+                    if '=' in part:
+                        k, v = part.split('=', 1)
+                    elif ':' in part:
+                        k, v = part.split(':', 1)
+                    else:
+                        continue
+                    axes[k.strip()] = float(self._parse_num(v.strip()))
+                font.set_variation_by_axes(axes)
+            else:
+                # Predefined name (e.g., 'Regular', 'Bold')
+                font.set_variation_by_name(variation)
+        except Exception as e:
+            self.errors.append(f"Failed to apply font variation '{variation}': {e}")
+
+    def _get_font(self, size: Union[str, int], font_path: str = None, variation: str = None) -> ImageFont.ImageFont:
         """
-        Get a font object. Supports aliases, system names, and direct paths.
+        Get a font object. Supports aliases, system names, direct paths, and variable font variations.
         """
         font_size = int(self._s(self._parse_num(size)))
+        variation = variation or self._get_state('font_variation', None)
+        
+        font_obj = None
         
         # 1. Check cached Remote Font aliases
         if font_path and hasattr(self, '_font_cache') and font_path in self._font_cache:
-            return ImageFont.truetype(io.BytesIO(self._font_cache[font_path]), font_size)
+            font_obj = ImageFont.truetype(io.BytesIO(self._font_cache[font_path]), font_size)
 
         # 2. Check registered Local aliases
-        if font_path and hasattr(self, '_font_aliases') and font_path in self._font_aliases:
+        elif font_path and hasattr(self, '_font_aliases') and font_path in self._font_aliases:
             font_path = self._font_aliases[font_path]
 
-        if font_path:
+        if not font_obj and font_path:
             # 3. Try as direct path
             try:
                 if not font_path.startswith(('http://', 'https://')):
                     if os.path.exists(font_path):
-                        return ImageFont.truetype(font_path, font_size)
+                        font_obj = ImageFont.truetype(font_path, font_size)
             except: pass
 
-            # 4. Try as system font name (Auto-Discovery)
-            self._discover_system_fonts()
-            name_lower = font_path.lower()
-            if name_lower in self._system_fonts:
+            if not font_obj:
+                # 4. Try as system font name (Auto-Discovery)
+                self._discover_system_fonts()
+                name_lower = font_path.lower()
+                if name_lower in self._system_fonts:
+                    try:
+                        font_obj = ImageFont.truetype(self._system_fonts[name_lower], font_size)
+                    except: pass
+
+            if not font_obj:
+                # 5. Try Pillow's internal search for standard names
                 try:
-                    return ImageFont.truetype(self._system_fonts[name_lower], font_size)
+                    font_obj = ImageFont.truetype(font_path, font_size)
                 except: pass
-
-            # 5. Try Pillow's internal search for standard names
-            try:
-                return ImageFont.truetype(font_path, font_size)
-            except: pass
         
-        # 6. Fallback to common fonts
-        common_fonts = ["arial.ttf", "arialbd.ttf", "times.ttf", "cour.ttf", "DejaVuSans.ttf"]
-        for font_name in common_fonts:
-            try:
-                return ImageFont.truetype(font_name, font_size)
-            except: continue
+        if not font_obj:
+            # 6. Fallback to common fonts
+            common_fonts = ["arial.ttf", "arialbd.ttf", "times.ttf", "cour.ttf", "DejaVuSans.ttf"]
+            for font_name in common_fonts:
+                try:
+                    font_obj = ImageFont.truetype(font_name, font_size)
+                    break
+                except: continue
         
-        # 7. Ultimate Fallback
-        return ImageFont.load_default()
+        if not font_obj:
+            # 7. Ultimate Fallback
+            font_obj = ImageFont.load_default()
+            
+        # Apply variable font variation if provided
+        if font_obj and variation:
+            self._apply_font_variation(font_obj, variation)
+            
+        return font_obj
     
     def _draw_text(self, x: str, y: str, text: str, color: str = None, 
                    size: str = None, font: str = None, anchor: str = None,
@@ -136,9 +174,10 @@ class TextMixin(AlphaMixin):
                    glow_color: str = None, glow_radius: str = "0",
                    max_width: str = None, truncate_width: str = None,
                    gradient_colors: str = None,
-                   line_height: str = None, letter_spacing: str = "0") -> str:
+                   line_height: str = None, letter_spacing: str = "0",
+                   variation: str = None) -> str:
         """
-        Draw text on the canvas with optional stroke, shadow, glow, wrapping, truncation, and gradient.
+        Draw text on the canvas with optional stroke, shadow, glow, wrapping, truncation, gradient, and variable font variation.
         Uses global state defaults (setFont, setColor, setStroke) if parameters are missing.
         
         Args:
@@ -156,6 +195,7 @@ class TextMixin(AlphaMixin):
             gradient_colors: Comma-separated colors for vertical gradient (e.g., "red,blue")
             line_height: Multiplier for line spacing (e.g. 1.5)
             letter_spacing: Extra pixels between characters (tracking)
+            variation: Variable font variation (e.g. "wght=600" or "Bold")
         """
         self._ensure_canvas()
         
@@ -191,7 +231,7 @@ class TextMixin(AlphaMixin):
             tracking = self._parse_length(letter_spacing, 'x')
             
             text_color = self._get_color(color)
-            font_obj = self._get_font(size, font)
+            font_obj = self._get_font(size, font, variation)
             
             # Metrics for perfect alignment
             ascent, descent = font_obj.getmetrics()
@@ -268,7 +308,7 @@ class TextMixin(AlphaMixin):
             
             return f"Text '{text}' drawn at ({x_pos}, {y_pos})"
         except ValueError as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors;line_height;letter_spacing]")
+            raise ValueError(f"{e}\nProper Syntax: $drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors;line_height;letter_spacing;variation]")
     
     def _to_upper(self, text: str) -> str:
         """
