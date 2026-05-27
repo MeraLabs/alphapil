@@ -4,6 +4,19 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## May 28, 2026 (v0.3.4)
+!!! abstract "Feature Release: Sub-Millisecond Rendering Caches & Tracking-Aware Bounding Boxes"
+    This major performance and feature release introduces global process-level caches (for system fonts, aliases, and processed images) and integrates tracking/letter-spacing support across `$drawTextMid` and `$drawTextIn`, featuring dynamic downscaled glow rendering for ultra-fast generation times.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🚀 Performance** | **Global Process Caches** | Introduced process-level global caching for loaded image buffers, system font paths, and Pillow ImageFont objects. Subsequent renders take under 1ms. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🔆 Typography** | **Tracking-Aware Scaling** | Exposed `letter_spacing` (tracking) inside `$drawTextMid` and `$drawTextIn`. Bounding boxes and binary-search fitting loops are now fully tracking-aware. | [Docs](functions/text/drawTextIn.md) |
+    | **🎨 Glow & Shadow** | **Sub-ms Glow Outline** | Completely redesigned glow and shadow layers to draw character-by-character with tracking. Added ceiling-division downscaling for large stroke/glow layers to make them instantaneous. | [Docs](functions/text/drawTextIn.md) |
+    | **🤖 AI** | **Manifest v0.3.4** | Synchronized technical manifest version with the new letter-spacing and rendering speed upgrades. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 28, 2026 (v0.3.3)
 !!! abstract "Patch Release: Robust Coordinate Parser & Anchor-Aligned Glow Effects"
     This release introduces support for single-number coordinates in standard properties (such as shadow offset) and solves the spatial misalignment bug of regional text glows under custom anchors (like middle-middle `"mm"` alignment).
@@ -56,19 +69,6 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
     | **📚 Composition** | **Layer Management** | Drag to draw, reorder indices, delete layers, and visual composition stack. | [Docs](functions/utils/open_coordinate_picker.md#features) |
     | **💾 Code Export** | **Template Generator** | Instantly export active single-command snippets or entire composed layout templates. | [Docs](functions/functions/utils/open_coordinate_picker.md) |
     | **🤖 AI** | **Manifest v0.2.9** | Synchronized technical manifest version with the new WYSIWYG Visual Designer. | [Manifest](ALPHAPIL_MANIFEST.txt) |
-
----
-
-## May 26, 2026 (v0.2.8)
-!!! abstract "Feature Release: Interactive Web Coordinate Picker"
-    This release introduces a premium, self-contained interactive coordinate picker to visually inspect and retrieve pixel coordinates on rendered images. It features real-time crosshair guides, perfect scaling calculation relative to original image dimensions, drag-and-drop file loading, and one-click coordinate clipboard copying.
-
-    | Feature | Change | Description | Link |
-    | :--- | :--- | :--- | :--- |
-    | **🎯 Coordinator** | **Web GUI Picker** | Introduced a self-contained Web GUI coordinate picker with live reticle crosshairs. | [Docs](functions/utils/open_coordinate_picker.md) |
-    | **💻 CLI** | **alphapil-picker** | Added `alphapil-picker` command line entry point to run picker on local images. | [Docs](functions/utils/open_coordinate_picker.md#command-line-interface-cli) |
-    | **🐍 Python API** | **open_coordinate_picker** | Added programmatic APIs `open_coordinate_picker` and `CanvasEngine.open_coordinate_picker`. | [Docs](functions/utils/open_coordinate_picker.md#python-programmatic-api) |
-    | **🤖 AI** | **Manifest v0.2.8** | Synchronized technical manifest with version 0.2.8 and documented the Picker. | [Manifest](ALPHAPIL_MANIFEST.txt) |
 
 ---
 

@@ -9,8 +9,16 @@ import io
 import aiohttp
 import os
 import platform
-from typing import Union, Dict, Optional, List
+import time
+from typing import Union, Dict, Optional, List, Tuple
 from PIL import ImageDraw, ImageFont, ImageFilter, Image
+
+
+# Global caches for shared memory across all CanvasEngine instances
+_GLOBAL_FONT_CACHE = {}      # alias -> font_bytes
+_GLOBAL_FONT_ALIASES = {}    # alias -> path
+_GLOBAL_SYSTEM_FONTS = {}    # name_lower -> font_path
+_GLOBAL_FONT_OBJ_CACHE = {}  # (font_path_or_alias, font_size, variation) -> ImageFont object
 
 
 from .base import AlphaMixin
@@ -23,17 +31,12 @@ class TextMixin(AlphaMixin):
     
     def _init_text(self):
         """Initialize text state."""
-        self._font_aliases: Dict[str, str] = {}
-        self._font_cache: Dict[str, bytes] = {}
-        self._system_fonts: Dict[str, str] = {} # Name -> Path cache
+        pass
 
     async def _load_font(self, path: str, alias: str) -> str:
         """
         Register a font file path or URL to an alias.
         """
-        if not hasattr(self, '_font_aliases'):
-            self._init_text()
-            
         if path.startswith(('http://', 'https://')):
             try:
                 async with aiohttp.ClientSession() as session:
@@ -41,21 +44,21 @@ class TextMixin(AlphaMixin):
                         if response.status != 200:
                             raise ValueError(f"Failed to download font: HTTP {response.status}")
                         font_data = await response.read()
-                        self._font_cache[alias] = font_data
-                        self._font_aliases[alias] = path # Store path as reference
+                        _GLOBAL_FONT_CACHE[alias] = font_data
+                        _GLOBAL_FONT_ALIASES[alias] = path # Store path as reference
                 return f"Remote font '{path}' loaded and cached as alias '{alias}'"
             except Exception as e:
                 raise RuntimeError(f"{e}\nProper Syntax: $loadFont[font_path;alias]")
         else:
-            self._font_aliases[alias] = path
+            _GLOBAL_FONT_ALIASES[alias] = path
             return f"Local font alias '{alias}' registered for {path}"
 
     def _discover_system_fonts(self) -> None:
         """Scan system directories for fonts once and cache their paths."""
-        if hasattr(self, '_system_fonts') and self._system_fonts:
+        if _GLOBAL_SYSTEM_FONTS:
             return
+        print("[DEBUG] Running system font discovery walk...", flush=True)
 
-        self._system_fonts = {}
         system = platform.system()
         paths = []
 
@@ -74,14 +77,14 @@ class TextMixin(AlphaMixin):
                         # Store both "Arial" and "Arial.ttf" as keys
                         name = os.path.splitext(f)[0].lower()
                         full_path = os.path.join(root, f)
-                        self._system_fonts[name] = full_path
-                        self._system_fonts[f.lower()] = full_path
+                        _GLOBAL_SYSTEM_FONTS[name] = full_path
+                        _GLOBAL_SYSTEM_FONTS[f.lower()] = full_path
 
     def _get_system_fonts(self) -> str:
         """Return a semicolon-separated list of all discovered system font names."""
         self._discover_system_fonts()
         # Filter out the .ttf entries to just show clean names
-        names = sorted(list(set([k for k in self._system_fonts.keys() if not k.endswith(('.ttf', '.otf'))])))
+        names = sorted(list(set([k for k in _GLOBAL_SYSTEM_FONTS.keys() if not k.endswith(('.ttf', '.otf'))])))
         return "; ".join(names)
 
     def _apply_font_variation(self, font: ImageFont.FreeTypeFont, variation: str) -> None:
@@ -115,15 +118,20 @@ class TextMixin(AlphaMixin):
         font_size = int(self._s(self._parse_num(size)))
         variation = variation or self._get_state('font_variation', None)
         
+        cache_key = (font_path, font_size, variation)
+        if cache_key in _GLOBAL_FONT_OBJ_CACHE:
+            return _GLOBAL_FONT_OBJ_CACHE[cache_key]
+        
+        print(f"[DEBUG] _get_font CACHE MISS size={font_size} path={font_path}", flush=True)
         font_obj = None
         
         # 1. Check cached Remote Font aliases
-        if font_path and hasattr(self, '_font_cache') and font_path in self._font_cache:
-            font_obj = ImageFont.truetype(io.BytesIO(self._font_cache[font_path]), font_size)
+        if font_path and font_path in _GLOBAL_FONT_CACHE:
+            font_obj = ImageFont.truetype(io.BytesIO(_GLOBAL_FONT_CACHE[font_path]), font_size)
 
         # 2. Check registered Local aliases
-        elif font_path and hasattr(self, '_font_aliases') and font_path in self._font_aliases:
-            font_path = self._font_aliases[font_path]
+        elif font_path and font_path in _GLOBAL_FONT_ALIASES:
+            font_path = _GLOBAL_FONT_ALIASES[font_path]
 
         if not font_obj and font_path:
             # 3. Try as direct path
@@ -137,9 +145,9 @@ class TextMixin(AlphaMixin):
                 # 4. Try as system font name (Auto-Discovery)
                 self._discover_system_fonts()
                 name_lower = font_path.lower()
-                if name_lower in self._system_fonts:
+                if name_lower in _GLOBAL_SYSTEM_FONTS:
                     try:
-                        font_obj = ImageFont.truetype(self._system_fonts[name_lower], font_size)
+                        font_obj = ImageFont.truetype(_GLOBAL_SYSTEM_FONTS[name_lower], font_size)
                     except: pass
 
             if not font_obj:
@@ -165,8 +173,43 @@ class TextMixin(AlphaMixin):
         if font_obj and variation:
             self._apply_font_variation(font_obj, variation)
             
+        _GLOBAL_FONT_OBJ_CACHE[cache_key] = font_obj
         return font_obj
     
+    def _get_text_bbox(self, x_pos: float, y_pos: float, text: str, font_obj, anchor: str, sw: int, tracking: float) -> Tuple[float, float, float, float]:
+        """
+        Compute tracking-aware bounding box for text.
+        """
+        if tracking != 0:
+            current_x = x_pos
+            if anchor and 'r' in anchor:
+                full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                current_x -= full_w
+            elif anchor and ('c' in anchor or 'm' in anchor):
+                full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                current_x -= full_w / 2
+
+            min_l, min_t, max_r, max_b = None, None, None, None
+            for char in text:
+                # Optimize: calculate character bounding box without stroke_width (extremely fast)
+                char_bbox = self.draw.textbbox((current_x, y_pos), char, font=font_obj, anchor=anchor)
+                l, t, r, b = char_bbox
+                if min_l is None:
+                    min_l, min_t, max_r, max_b = l, t, r, b
+                else:
+                    min_l = min(min_l, l)
+                    min_t = min(min_t, t)
+                    max_r = max(max_r, r)
+                    max_b = max(max_b, b)
+                current_x += self.draw.textlength(char, font=font_obj) + tracking
+            
+            # Apply stroke expansion once at the end if active
+            if sw > 0:
+                return (min_l - sw, min_t - sw, max_r + sw, max_b + sw)
+            return (min_l, min_t, max_r, max_b)
+        else:
+            return self.draw.textbbox((x_pos, y_pos), text, font=font_obj, anchor=anchor, stroke_width=sw)
+
     def _draw_text(self, x: str, y: str, text: str, color: str = None, 
                    size: str = None, font: str = None, anchor: str = None,
                    stroke_width: str = None, stroke_fill: str = None,
@@ -179,23 +222,6 @@ class TextMixin(AlphaMixin):
         """
         Draw text on the canvas with optional stroke, shadow, glow, wrapping, truncation, gradient, and variable font variation.
         Uses global state defaults (setFont, setColor, setStroke) if parameters are missing.
-        
-        Args:
-            x, y: Position
-            text: Content
-            color: Text color
-            size: Font size
-            font: Font alias or path
-            anchor: PIL anchor (e.g., 'mm', 'la')
-            stroke_width, stroke_fill: Stroke properties
-            shadow_color, shadow_offset: Shadow properties
-            glow_color, glow_radius: Glow properties
-            max_width: Wrap text if it exceeds this width
-            truncate_width: Truncate text if it exceeds this width
-            gradient_colors: Comma-separated colors for vertical gradient (e.g., "red,blue")
-            line_height: Multiplier for line spacing (e.g. 1.5)
-            letter_spacing: Extra pixels between characters (tracking)
-            variation: Variable font variation (e.g. "wght=600" or "Bold")
         """
         self._ensure_canvas()
         
@@ -240,22 +266,100 @@ class TextMixin(AlphaMixin):
             # 1. Apply Glow Effect
             if glow_color and gr > 0:
                 gc = self._get_color(glow_color)
-                bbox = self.draw.textbbox((x_pos, y_pos), text, font=font_obj, anchor=anchor, stroke_width=sw)
+                bbox = self._get_text_bbox(x_pos, y_pos, text, font_obj, anchor, sw, tracking)
                 left, top, right, bottom = bbox
                 tw, th = int(right - left), int(bottom - top)
                 if tw > 0 and th > 0:
-                    glow_img = Image.new("RGBA", (tw + gr*4, th + gr*4), (0,0,0,0))
-                    glow_draw = ImageDraw.Draw(glow_img)
-                    glow_draw.text(
-                        (x_pos - left + gr*2, y_pos - top + gr*2),
-                        text,
-                        font=font_obj,
-                        fill=gc,
-                        stroke_width=sw+gr,
-                        stroke_fill=gc,
-                        anchor=anchor
-                    )
-                    glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
+                    # Optimize glow drawing with a dynamic downscale factor (ceil(total_stroke / 8)) to keep stroke_width under 8px
+                    total_stroke = sw + gr
+                    ds = (total_stroke + 7) // 8
+                    
+                    if ds > 1:
+                        # Load smaller font for downscaled drawing
+                        logical_size = float(self._parse_num(size or "24"))
+                        ds_font = self._get_font(str(logical_size / ds), font, variation)
+                        
+                        ds_gr = max(1, int(gr / ds))
+                        ds_sw = max(0, int(sw / ds))
+                        ds_tracking = tracking / ds
+                        ds_tw = max(1, int(tw / ds))
+                        ds_th = max(1, int(th / ds))
+                        ds_left = left / ds
+                        ds_top = top / ds
+                        ds_x_pos = x_pos / ds
+                        ds_y_pos = y_pos / ds
+                        
+                        glow_img_ds = Image.new("RGBA", (ds_tw + ds_gr*4, ds_th + ds_gr*4), (0,0,0,0))
+                        glow_draw_ds = ImageDraw.Draw(glow_img_ds)
+                        
+                        if tracking != 0:
+                            current_x = ds_x_pos - ds_left + ds_gr*2
+                            if anchor and 'r' in anchor:
+                                full_w = sum(self.draw.textlength(c, font=ds_font) for c in text) + ds_tracking * (len(text) - 1)
+                                current_x -= full_w
+                            elif anchor and ('c' in anchor or 'm' in anchor):
+                                full_w = sum(self.draw.textlength(c, font=ds_font) for c in text) + ds_tracking * (len(text) - 1)
+                                current_x -= full_w / 2
+
+                            for char in text:
+                                glow_draw_ds.text(
+                                    (current_x, ds_y_pos - ds_top + ds_gr*2),
+                                    char,
+                                    font=ds_font,
+                                    fill=gc,
+                                    stroke_width=ds_sw + ds_gr,
+                                    stroke_fill=gc,
+                                    anchor=anchor
+                                )
+                                current_x += self.draw.textlength(char, font=ds_font) + ds_tracking
+                        else:
+                            glow_draw_ds.text(
+                                (ds_x_pos - ds_left + ds_gr*2, ds_y_pos - ds_top + ds_gr*2),
+                                text,
+                                font=ds_font,
+                                fill=gc,
+                                stroke_width=ds_sw + ds_gr,
+                                stroke_fill=gc,
+                                anchor=anchor
+                            )
+                        
+                        glow_img_ds = glow_img_ds.filter(ImageFilter.GaussianBlur(ds_gr))
+                        glow_img = glow_img_ds.resize((tw + gr*4, th + gr*4), Image.Resampling.BILINEAR)
+                    else:
+                        glow_img = Image.new("RGBA", (tw + gr*4, th + gr*4), (0,0,0,0))
+                        glow_draw = ImageDraw.Draw(glow_img)
+                        if tracking != 0:
+                            current_x = x_pos - left + gr*2
+                            if anchor and 'r' in anchor:
+                                full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                                current_x -= full_w
+                            elif anchor and ('c' in anchor or 'm' in anchor):
+                                full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                                current_x -= full_w / 2
+
+                            for char in text:
+                                glow_draw.text(
+                                    (current_x, y_pos - top + gr*2),
+                                    char,
+                                    font=font_obj,
+                                    fill=gc,
+                                    stroke_width=sw+gr,
+                                    stroke_fill=gc,
+                                    anchor=anchor
+                                )
+                                current_x += self.draw.textlength(char, font=font_obj) + tracking
+                        else:
+                            glow_draw.text(
+                                (x_pos - left + gr*2, y_pos - top + gr*2),
+                                text,
+                                font=font_obj,
+                                fill=gc,
+                                stroke_width=sw+gr,
+                                stroke_fill=gc,
+                                anchor=anchor
+                            )
+                        glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
+                    
                     self.canvas.paste(glow_img, (int(left - gr*2), int(top - gr*2)), glow_img)
 
             # 2. Apply Shadow Effect
@@ -263,14 +367,28 @@ class TextMixin(AlphaMixin):
                 sc = self._get_color(shadow_color)
                 raw_sx, raw_sy = self._parse_coords(shadow_offset)
                 sx, sy = self._s(raw_sx), self._s(raw_sy)
-                self.draw.text((x_pos + sx, y_pos + sy), text, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=anchor)
+                if tracking != 0:
+                    current_x = x_pos + sx
+                    if anchor and 'r' in anchor:
+                        full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                        current_x -= full_w
+                    elif anchor and ('c' in anchor or 'm' in anchor):
+                        full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                        current_x -= full_w / 2
+
+                    for char in text:
+                        self.draw.text((current_x, y_pos + sy), char, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=anchor)
+                        current_x += self.draw.textlength(char, font=font_obj) + tracking
+                else:
+                    self.draw.text((x_pos + sx, y_pos + sy), text, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=anchor)
 
             # 3. Handle Gradient
             if gradient_colors:
                 colors = [c.strip() for c in gradient_colors.split(',')]
                 if len(colors) >= 2:
-                    bbox = self.draw.textbbox((0, 0), text, font=font_obj)
-                    tw, th = int(bbox[2]-bbox[0]), int(bbox[3]-bbox[1])
+                    bbox = self._get_text_bbox(x_pos, y_pos, text, font_obj, anchor, 0, tracking)
+                    left, top, right, bottom = bbox
+                    tw, th = int(right - left), int(bottom - top)
                     if tw > 0 and th > 0:
                         gradient = Image.new("RGBA", (tw, th))
                         c1 = self._get_color(colors[0])
@@ -283,8 +401,22 @@ class TextMixin(AlphaMixin):
                             ImageDraw.Draw(gradient).line([(0, i), (tw, i)], fill=(r, g, b, 255))
                         
                         mask = Image.new("L", (tw, th), 0)
-                        ImageDraw.Draw(mask).text((0, 0), text, font=font_obj, fill=255)
-                        self.canvas.paste(gradient, (int(x_pos), int(y_pos)), mask)
+                        mask_draw = ImageDraw.Draw(mask)
+                        if tracking != 0:
+                            current_x = -left + x_pos
+                            if anchor and 'r' in anchor:
+                                full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                                current_x -= full_w
+                            elif anchor and ('c' in anchor or 'm' in anchor):
+                                full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
+                                current_x -= full_w / 2
+
+                            for char in text:
+                                mask_draw.text((current_x, -top + y_pos), char, font=font_obj, fill=255, anchor=anchor)
+                                current_x += mask_draw.textlength(char, font=font_obj) + tracking
+                        else:
+                            mask_draw.text((-left + x_pos, -top + y_pos), text, font=font_obj, fill=255, anchor=anchor)
+                        self.canvas.paste(gradient, (int(left), int(top)), mask)
                         return f"Gradient text '{text}' drawn at ({x_pos}, {y_pos})"
 
             # 4. Draw Main Text
@@ -300,7 +432,7 @@ class TextMixin(AlphaMixin):
             if line_spacing: text_kwargs['spacing'] = line_spacing
 
             # Manual Letter Spacing (Tracking)
-            if tracking > 0:
+            if tracking != 0:
                 current_x = x_pos
                 # Handle anchor offset for tracking
                 if anchor and 'r' in anchor:
@@ -472,7 +604,7 @@ class TextMixin(AlphaMixin):
                         stroke_width: str = None, stroke_fill: str = None,
                         shadow_color: str = None, shadow_offset: str = "0,0",
                         glow_color: str = None, glow_radius: str = "0",
-                        variation: str = None) -> str:
+                        letter_spacing: str = "0", variation: str = None) -> str:
         """
         Draw text centered between two X coordinates (x1, x2) and two Y coordinates (y1, y2).
         If the text width exceeds the available width (x2 - x1), it automatically truncates the text.
@@ -506,9 +638,10 @@ class TextMixin(AlphaMixin):
                                    stroke_width=stroke_width, stroke_fill=stroke_fill,
                                    shadow_color=shadow_color, shadow_offset=shadow_offset,
                                    glow_color=glow_color, glow_radius=glow_radius,
-                                   truncate_width=str(logical_max_w), variation=variation)
+                                   truncate_width=str(logical_max_w), letter_spacing=letter_spacing,
+                                   variation=variation)
         except Exception as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;variation]")
+            raise ValueError(f"{e}\nProper Syntax: $drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;letter_spacing;variation]")
 
     def _draw_text_in(self, x1: str, y1: str, x2: str, y2: str, 
                       text: str, color: str = None, 
@@ -516,7 +649,7 @@ class TextMixin(AlphaMixin):
                       stroke_width: str = None, stroke_fill: str = None,
                       shadow_color: str = None, shadow_offset: str = "0,0",
                       glow_color: str = None, glow_radius: str = "0",
-                      variation: str = None) -> str:
+                      letter_spacing: str = "0", variation: str = None) -> str:
         """
         Draw text fitted inside a bounding box (x1, y1, x2, y2).
         If the text exceeds the box dimensions, it automatically scales down the font size until it fits.
@@ -538,20 +671,29 @@ class TextMixin(AlphaMixin):
             
             # Start with the requested font size
             requested_size = float(self._parse_num(size or "24"))
-            current_size = requested_size
             
+            tracking_val = self._parse_length(letter_spacing, 'x')
             sw_val = int(self._s(self._parse_num(stroke_width or "0")))
             
-            # Loop to find the perfect font size that fits the bounding box
-            while current_size > 2:
-                font_obj = self._get_font(str(current_size), font, variation)
-                bbox = self.draw.textbbox((0, 0), text, font=font_obj, stroke_width=sw_val)
+            # Binary search to find the perfect font size that fits the bounding box (O(log N))
+            low = 2.0
+            high = requested_size
+            best_size = low
+            
+            while low <= high:
+                mid = (low + high) / 2
+                font_obj = self._get_font(str(mid), font, variation)
+                bbox = self._get_text_bbox(0, 0, text, font_obj, None, sw_val, tracking_val)
                 text_w = bbox[2] - bbox[0]
                 text_h = bbox[3] - bbox[1]
                 
                 if text_w <= box_w and text_h <= box_h:
-                    break
-                current_size -= 1
+                    best_size = mid
+                    low = mid + 0.5  # Try a slightly larger font size
+                else:
+                    high = mid - 0.5  # Need a smaller font size
+                    
+            current_size = best_size
                 
             # Midpoint of the box
             xm_pos = (bx1 + bx2) / 2
@@ -565,9 +707,9 @@ class TextMixin(AlphaMixin):
                                    stroke_width=stroke_width, stroke_fill=stroke_fill,
                                    shadow_color=shadow_color, shadow_offset=shadow_offset,
                                    glow_color=glow_color, glow_radius=glow_radius,
-                                   variation=variation)
+                                   letter_spacing=letter_spacing, variation=variation)
         except Exception as e:
-            raise ValueError(f"{e}\nProper Syntax: $drawTextIn[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;variation]")
+            raise ValueError(f"{e}\nProper Syntax: $drawTextIn[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;letter_spacing;variation]")
 
     # Note: _draw_text_center and _draw_text_wrapped are now logically covered 
     # by _draw_text and _draw_text_mid with parameters.

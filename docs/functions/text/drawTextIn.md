@@ -5,7 +5,7 @@ Draws text perfectly centered/fitted within a bounding box specified by `x1`, `y
 ## Syntax
 
 ```bash
-$drawTextIn[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;variation]
+$drawTextIn[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;letter_spacing;variation]
 ```
 
 ## Parameters
@@ -26,6 +26,7 @@ $drawTextIn[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_col
 | **shadow_offset**| `string` | Shadow offset as `dx,dy`. | `0,0` |
 | **glow_color** | `string` | Outer glow color. | `None` |
 | **glow_radius**| `int` | Outer glow blur radius. | `0` |
+| **letter_spacing**| `int` | Letter spacing (tracking) in pixels. | `0` |
 | **variation** | `string` | Variable font variation axes (e.g. `wght=700`). | `None` |
 
 ## Example

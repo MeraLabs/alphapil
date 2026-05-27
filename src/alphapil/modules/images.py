@@ -11,6 +11,9 @@ from PIL import Image, ImageFilter, ImageDraw, ImageEnhance
 import aiohttp
 
 
+_GLOBAL_IMAGE_CACHE = {}
+
+
 from .base import AlphaMixin
 
 
@@ -32,9 +35,7 @@ class ImagesMixin(AlphaMixin):
     
     def _get_image_cache(self):
         """Get or create image cache."""
-        if not hasattr(self, '_image_cache'):
-            self._image_cache = {}
-        return self._image_cache
+        return _GLOBAL_IMAGE_CACHE
     
     async def _draw_image(self, x: str, y: str, image_path: str, 
                          width: str = None, height: str = None, 
@@ -55,58 +56,76 @@ class ImagesMixin(AlphaMixin):
             else:
                 final_anchor = anchor
 
-            # 2. Load image (Async)
-            img = await self._load_image_async(image_path)
-            
-            # 3. Resize logic
+            # 2. Get target size, opacity, and radius parameters to form unique cache key
             target_w = self._parse_length(width, 'x') if width else None
             target_h = self._parse_length(height, 'y') if height else None
+            tw_key = int(target_w) if target_w else None
+            th_key = int(target_h) if target_h else None
             
-            if target_w and target_h:
-                img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
-            elif target_w:
-                aspect = img.height / img.width
-                target_h = target_w * aspect
-                img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
-            elif target_h:
-                aspect = img.width / img.height
-                target_w = target_h * aspect
-                img = img.resize((int(target_w), int(target_h)), Image.Resampling.LANCZOS)
-            
-            w, h = img.size
+            opacity_val = float(self._parse_num(opacity)) / 100.0
             radius_val = int(self._parse_length(radius, 'x')) if radius else 0
             
-            # 4. Apply Anchor Offset
+            cache = self._get_image_cache()
+            cache_key = (image_path, tw_key, th_key, is_circle, radius_val, opacity_val)
+            
+            if cache_key in cache:
+                img = cache[cache_key]
+            else:
+                # Load base image (cached original at module level)
+                img = await self._load_image_async(image_path)
+                
+                # 3. Resize logic using Lanczos (skip if dimensions already match target)
+                if target_w and target_h:
+                    tw_int, th_int = int(target_w), int(target_h)
+                    if img.size != (tw_int, th_int):
+                        img = img.resize((tw_int, th_int), Image.Resampling.LANCZOS)
+                elif target_w:
+                    aspect = img.height / img.width
+                    tw_int, th_int = int(target_w), int(target_w * aspect)
+                    if img.size != (tw_int, th_int):
+                        img = img.resize((tw_int, th_int), Image.Resampling.LANCZOS)
+                elif target_h:
+                    aspect = img.width / img.height
+                    tw_int, th_int = int(target_h * aspect), int(target_h)
+                    if img.size != (tw_int, th_int):
+                        img = img.resize((tw_int, th_int), Image.Resampling.LANCZOS)
+                
+                w, h = img.size
+                
+                # 4. Styling (Circle or Rounded Corners)
+                if is_circle:
+                    mask = Image.new("L", (w, h), 0)
+                    ImageDraw.Draw(mask).ellipse((0, 0, w, h), fill=255)
+                    output = Image.new("RGBA", (w, h), (0,0,0,0))
+                    output.paste(img, (0, 0), mask)
+                    img = output
+                elif radius_val > 0:
+                    mask = Image.new("L", (w, h), 0)
+                    ImageDraw.Draw(mask).rounded_rectangle([(0, 0), (w, h)], radius=radius_val, fill=255)
+                    output = Image.new("RGBA", (w, h), (0,0,0,0))
+                    output.paste(img, (0, 0), mask)
+                    img = output
+                
+                # 5. Apply Opacity
+                if opacity_val < 1.0:
+                    if img.mode != 'RGBA':
+                        img = img.convert('RGBA')
+                    r, g, b, a = img.split()
+                    a = a.point(lambda p: int(p * opacity_val))
+                    img = Image.merge('RGBA', (r, g, b, a))
+                
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+                
+                # Cache the fully processed image
+                cache[cache_key] = img
+            
+            # 6. Apply Anchor Offset and draw on canvas
+            w, h = img.size
             ax, ay = self._get_anchor_offset(final_anchor, w, h)
             x_pos = int(self._parse_position(x, 'x') + ax)
             y_pos = int(self._parse_position(y, 'y') + ay)
             
-            opacity_val = float(self._parse_num(opacity)) / 100.0
-            
-            # 5. Styling (Circle or Rounded)
-            if is_circle:
-                mask = Image.new("L", (w, h), 0)
-                ImageDraw.Draw(mask).ellipse((0, 0, w, h), fill=255)
-                output = Image.new("RGBA", (w, h), (0,0,0,0))
-                output.paste(img, (0, 0), mask)
-                img = output
-            elif radius_val > 0:
-                mask = Image.new("L", (w, h), 0)
-                ImageDraw.Draw(mask).rounded_rectangle([(0, 0), (w, h)], radius=radius_val, fill=255)
-                output = Image.new("RGBA", (w, h), (0,0,0,0))
-                output.paste(img, (0, 0), mask)
-                img = output
-            
-            # 6. Apply opacity
-            if opacity_val < 1.0:
-                if img.mode != 'RGBA': img = img.convert('RGBA')
-                r, g, b, a = img.split()
-                a = a.point(lambda p: int(p * opacity_val))
-                img = Image.merge('RGBA', (r, g, b, a))
-            
-            if img.mode != 'RGBA':
-                img = img.convert('RGBA')
-                
             self.canvas.paste(img, (x_pos, y_pos), img)
             return f"Image drawn at ({x_pos}, {y_pos}) with anchor {final_anchor}"
             
@@ -244,8 +263,7 @@ class ImagesMixin(AlphaMixin):
     def clear_image_cache(self) -> str:
         """Clear the image cache."""
         try:
-            if hasattr(self, '_image_cache'):
-                self._image_cache.clear()
+            _GLOBAL_IMAGE_CACHE.clear()
             return "Image cache cleared"
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $clearImageCache[]")

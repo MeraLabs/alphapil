@@ -5,7 +5,7 @@ Centers text perfectly between two X coordinates (`x1`, `x2`) and two Y coordina
 ## Syntax
 
 ```bash
-$drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;variation]
+$drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;letter_spacing;variation]
 ```
 
 ## Parameters
@@ -20,6 +20,13 @@ $drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_co
 | **color** | `string` | Text fill color. | `white` |
 | **size** | `int` | Font size in pixels. | `24` |
 | **font** | `string` | Font alias loaded via `$loadFont`. | `default` |
+| **stroke_width**| `int` | Width of text stroke outline. | `None` |
+| **stroke_fill**| `string` | Color of text stroke outline. | `None` |
+| **shadow_color**| `string` | Drop shadow color. | `None` |
+| **shadow_offset**| `string` | Shadow offset as `dx,dy`. | `0,0` |
+| **glow_color** | `string` | Outer glow color. | `None` |
+| **glow_radius**| `int` | Outer glow blur radius. | `0` |
+| **letter_spacing**| `int` | Letter spacing (tracking) in pixels. | `0` |
 | **variation** | `string` | Variable font variation axes (e.g. `wght=700`). | `None` |
 
 ## Example
