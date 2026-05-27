@@ -240,12 +240,23 @@ class TextMixin(AlphaMixin):
             # 1. Apply Glow Effect
             if glow_color and gr > 0:
                 gc = self._get_color(glow_color)
-                bbox = self.draw.textbbox((0, 0), text, font=font_obj, stroke_width=sw)
-                tw, th = int(bbox[2]-bbox[0] + gr*4), int(bbox[3]-bbox[1] + gr*4)
-                glow_img = Image.new("RGBA", (tw, th), (0,0,0,0))
-                ImageDraw.Draw(glow_img).text((gr*2, gr*2), text, font=font_obj, fill=gc, stroke_width=sw+gr, stroke_fill=gc)
-                glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
-                self.canvas.paste(glow_img, (int(x_pos - gr*2), int(y_pos - gr*2)), glow_img)
+                bbox = self.draw.textbbox((x_pos, y_pos), text, font=font_obj, anchor=anchor, stroke_width=sw)
+                left, top, right, bottom = bbox
+                tw, th = int(right - left), int(bottom - top)
+                if tw > 0 and th > 0:
+                    glow_img = Image.new("RGBA", (tw + gr*4, th + gr*4), (0,0,0,0))
+                    glow_draw = ImageDraw.Draw(glow_img)
+                    glow_draw.text(
+                        (x_pos - left + gr*2, y_pos - top + gr*2),
+                        text,
+                        font=font_obj,
+                        fill=gc,
+                        stroke_width=sw+gr,
+                        stroke_fill=gc,
+                        anchor=anchor
+                    )
+                    glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
+                    self.canvas.paste(glow_img, (int(left - gr*2), int(top - gr*2)), glow_img)
 
             # 2. Apply Shadow Effect
             if shadow_color:

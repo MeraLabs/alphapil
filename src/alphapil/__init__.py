@@ -5,7 +5,7 @@ This package provides a powerful recursive parser for handling nested functions
 in image generation templates, with support for asynchronous operations.
 """
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 __author__ = "MeraLabs"
 
 from .engine import CanvasEngine

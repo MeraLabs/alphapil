@@ -358,7 +358,10 @@ class AlphaMixin:
         coord_str = str(coord_str).strip().lstrip('(').rstrip(')')
         parts = coord_str.split(',')
         
-        if len(parts) != 2:
+        if len(parts) == 1:
+            val = self._parse_num(parts[0].strip())
+            return (val, val)
+        elif len(parts) != 2:
             raise ValueError(f"Invalid coordinates: {coord_str}")
         
         return (self._parse_num(parts[0].strip()), self._parse_num(parts[1].strip()))
