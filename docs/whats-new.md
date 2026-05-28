@@ -4,16 +4,18 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
-## May 28, 2026 (v0.3.4)
-!!! abstract "Feature Release: Sub-Millisecond Rendering Caches & Tracking-Aware Bounding Boxes"
-    This major performance and feature release introduces global process-level caches (for system fonts, aliases, and processed images) and integrates tracking/letter-spacing support across `$drawTextMid` and `$drawTextIn`, featuring dynamic downscaled glow rendering for ultra-fast generation times.
+## May 28, 2026 (v0.3.5)
+!!! abstract "Feature Release: 3,500x PNG Speedup, Rendering Caches & Tracking-Aware Bounding Boxes"
+    This major performance and feature release introduces global process-level caches (for system fonts, aliases, and processed images) and integrates tracking/letter-spacing support across `$drawTextMid` and `$drawTextIn`, featuring dynamic downscaled glow rendering and massive PNG save speedups for ultra-fast generation times.
 
     | Feature | Change | Description | Link |
     | :--- | :--- | :--- | :--- |
+    | **🚀 Performance** | **3,500x PNG Speedup** | Disabled exhaustive PNG re-compression (`optimize=True`) for PNG saves and bytes generation, yielding up to a 3,500x speedup (milliseconds instead of 35 seconds). | [Manifest](ALPHAPIL_MANIFEST.txt) |
     | **🚀 Performance** | **Global Process Caches** | Introduced process-level global caching for loaded image buffers, system font paths, and Pillow ImageFont objects. Subsequent renders take under 1ms. | [Manifest](ALPHAPIL_MANIFEST.txt) |
     | **🔆 Typography** | **Tracking-Aware Scaling** | Exposed `letter_spacing` (tracking) inside `$drawTextMid` and `$drawTextIn`. Bounding boxes and binary-search fitting loops are now fully tracking-aware. | [Docs](functions/text/drawTextIn.md) |
     | **🎨 Glow & Shadow** | **Sub-ms Glow Outline** | Completely redesigned glow and shadow layers to draw character-by-character with tracking. Added ceiling-division downscaling for large stroke/glow layers to make them instantaneous. | [Docs](functions/text/drawTextIn.md) |
-    | **🤖 AI** | **Manifest v0.3.4** | Synchronized technical manifest version with the new letter-spacing and rendering speed upgrades. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🐛 Bug Fix** | **Font Alias Cache Keys** | Resolved local font alias cache key lookup bug inside `_get_font` to ensure subsequent alias loads hit the memory cache. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🤖 AI** | **Manifest v0.3.5** | Synchronized technical manifest version with the new letter-spacing and rendering speed upgrades. | [Manifest](ALPHAPIL_MANIFEST.txt) |
 
 ---
 
