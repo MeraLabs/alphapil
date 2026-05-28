@@ -1,4 +1,4 @@
-ALPHAPIL TECHNICAL MANIFEST (V0.3.5)
+ALPHAPIL TECHNICAL MANIFEST (V0.3.6)
 ====================================
 Guide for AI Agents to write professional AlphaPIL templates.
 
@@ -35,7 +35,7 @@ $createCanvas[width;height;color;aa;strict;scale]
 $save[filename] | $setVar[name;value] | $getVar[name;default] | $setFont[name_or_alias;size;variation]
 $startContainer[x;y;w;h;padding;anchor] | $endContainer[]
 $startClip[x;y;w;h;radius] | $endClip[]
-$getSystemFonts[] | $getErrors[] | $getBytes[format]
+$getSystemFonts[] | $getErrors[] | $getBytes[format] | $setOutputFormat[format]
 
 --- SHAPES ---
 $drawRect[x;y;w;h;color;outline;fill;lw;radius;anchor;shadow_color;shadow_offset;glow_color;glow_radius]

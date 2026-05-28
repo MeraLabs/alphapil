@@ -47,6 +47,7 @@ nav:
       - createCanvas: functions/core/createCanvas.md
       - save: functions/core/save.md
       - getBytes: functions/core/getBytes.md
+      - setOutputFormat: functions/core/setOutputFormat.md
       - setVar: functions/core/setVar.md
       - getVar: functions/core/getVar.md
       - setFont: functions/core/setFont.md

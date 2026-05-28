@@ -57,7 +57,6 @@ class TextMixin(AlphaMixin):
         """Scan system directories for fonts once and cache their paths."""
         if _GLOBAL_SYSTEM_FONTS:
             return
-        print("[DEBUG] Running system font discovery walk...", flush=True)
 
         system = platform.system()
         paths = []
@@ -127,7 +126,6 @@ class TextMixin(AlphaMixin):
         if cache_key in _GLOBAL_FONT_OBJ_CACHE:
             return _GLOBAL_FONT_OBJ_CACHE[cache_key]
         
-        print(f"[DEBUG] _get_font CACHE MISS size={font_size} path={font_path}", flush=True)
         font_obj = None
         
         # 1. Check cached Remote Font aliases

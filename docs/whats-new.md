@@ -4,7 +4,7 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
-## May 28, 2026 (v0.3.5)
+## May 28, 2026 (v0.3.6)
 !!! abstract "Feature Release: 3,500x PNG Speedup, Rendering Caches & Tracking-Aware Bounding Boxes"
     This major performance and feature release introduces global process-level caches (for system fonts, aliases, and processed images) and integrates tracking/letter-spacing support across `$drawTextMid` and `$drawTextIn`, featuring dynamic downscaled glow rendering and massive PNG save speedups for ultra-fast generation times.
 
@@ -15,7 +15,8 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
     | **🔆 Typography** | **Tracking-Aware Scaling** | Exposed `letter_spacing` (tracking) inside `$drawTextMid` and `$drawTextIn`. Bounding boxes and binary-search fitting loops are now fully tracking-aware. | [Docs](functions/text/drawTextIn.md) |
     | **🎨 Glow & Shadow** | **Sub-ms Glow Outline** | Completely redesigned glow and shadow layers to draw character-by-character with tracking. Added ceiling-division downscaling for large stroke/glow layers to make them instantaneous. | [Docs](functions/text/drawTextIn.md) |
     | **🐛 Bug Fix** | **Font Alias Cache Keys** | Resolved local font alias cache key lookup bug inside `_get_font` to ensure subsequent alias loads hit the memory cache. | [Manifest](ALPHAPIL_MANIFEST.txt) |
-    | **🤖 AI** | **Manifest v0.3.5** | Synchronized technical manifest version with the new letter-spacing and rendering speed upgrades. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🤖 AI** | **Manifest v0.3.6** | Synchronized technical manifest version with the new letter-spacing, rendering speed, and custom output serialization upgrades. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **⚡ Serialization** | **Configurable Output Compression** | Added `$setOutputFormat[format]` to toggle output serialization between ultra-fast lossy `JPEG` and premium lossless transparent `PNG` formats. | [Docs](functions/core/setOutputFormat.md) |
 
 ---
 

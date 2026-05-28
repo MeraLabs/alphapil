@@ -43,13 +43,14 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
         # Register all built-in functions from modules
         self._register_builtin_functions()
     
-    async def render_template(self, template_text: str, data: dict = None) -> bytes:
+    async def render_template(self, template_text: str, data: dict = None, format: Optional[str] = None) -> bytes:
         """
         Render a template with optional data injection (Async).
         
         Args:
             template_text: Template content as string
             data: Optional dictionary of variables to set
+            format: Optional output format override (e.g. 'PNG', 'JPEG')
             
         Returns:
             Canvas image as bytes
@@ -84,8 +85,11 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             # Parse and execute the entire template
             await self.parse(clean_template)
             
+            # Determine resolved output format
+            resolved_format = format or self._get_state('output_format', 'PNG')
+            
             # Return canvas as bytes
-            return self.get_canvas_bytes()
+            return self.get_canvas_bytes(resolved_format)
             
         except Exception as e:
             raise RuntimeError(f"Template rendering failed: {e}")
@@ -94,17 +98,18 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
         """Alias for get_canvas_bytes"""
         return self.get_canvas_bytes(format)
 
-    async def render(self, template_text: str, data: dict = None) -> bytes:
+    async def render(self, template_text: str, data: dict = None, format: Optional[str] = None) -> bytes:
         """Alias for render_template"""
-        return await self.render_template(template_text, data)
+        return await self.render_template(template_text, data, format)
     
-    async def render_template_file(self, template_path: str, data: dict = None) -> bytes:
+    async def render_template_file(self, template_path: str, data: dict = None, format: Optional[str] = None) -> bytes:
         """
         Render a template from file with optional data injection (Async).
         
         Args:
             template_path: Path to template file
             data: Optional dictionary of variables to set
+            format: Optional output format override (e.g. 'PNG', 'JPEG')
             
         Returns:
             Canvas image as bytes
@@ -118,7 +123,7 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             # or could use aiofiles if dependency added. For now sync read is okay.
             with open(template_path, 'r', encoding='utf-8') as f:
                 template_text = f.read()
-            return await self.render_template(template_text, data)
+            return await self.render_template(template_text, data, format)
         except FileNotFoundError:
             raise FileNotFoundError(f"Template file not found: {template_path}")
         except Exception as e:
@@ -132,6 +137,7 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
         self.register_function("setVar", self._set_var)
         self.register_function("getVar", self._get_var)
         self.register_function("getBytes", self.get_bytes)
+        self.register_function("setOutputFormat", self._set_output_format)
         self.register_function("function", self._define_function)
         self.register_function("getErrors", self._get_errors)
         
@@ -273,6 +279,18 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
         """
         return str(self.variables.get(name, default))
     
+    def _set_output_format(self, format: str = "PNG") -> str:
+        """
+        Set the output format for the canvas (e.g., 'PNG', 'JPEG').
+        """
+        fmt = str(format or "PNG").strip().upper()
+        if fmt == "JPG":
+            fmt = "JPEG"
+        if fmt not in ['PNG', 'JPEG', 'WEBP', 'GIF', 'BMP']:
+            raise ValueError(f"Unsupported output format: {fmt}. Supported formats: PNG, JPEG, WEBP, GIF, BMP")
+        self._set_state('output_format', fmt)
+        return f"Output format set to {fmt}"
+    
     def _save_canvas(self, filename: str = "output.png") -> str:
         """
         Save the current canvas with Lanczos downscaling if AA is enabled,
@@ -303,6 +321,7 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             save_params = {"dpi": (dpi, dpi)}
             if filename.lower().endswith(('.jpg', '.jpeg')):
                 save_params.update({"quality": 100, "subsampling": 0, "optimize": True})
+                img = img.convert('RGB')
             
             img.save(filename, **save_params)
             return f"Canvas saved as {filename}"
@@ -340,6 +359,7 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             save_params = {"format": format, "dpi": (dpi, dpi)}
             if format.upper() in ["JPEG", "JPG"]:
                 save_params.update({"quality": 100, "subsampling": 0, "optimize": True})
+                img = img.convert('RGB')
                 
             img.save(img_bytes, **save_params)
             img_bytes.seek(0)
