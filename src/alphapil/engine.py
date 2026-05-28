@@ -300,9 +300,9 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             # Set high quality parameters for various formats
             # Embed DPI metadata scaled for output resolution
             dpi = 72 * scale_factor
-            save_params = {"optimize": True, "dpi": (dpi, dpi)}
+            save_params = {"dpi": (dpi, dpi)}
             if filename.lower().endswith(('.jpg', '.jpeg')):
-                save_params.update({"quality": 100, "subsampling": 0})
+                save_params.update({"quality": 100, "subsampling": 0, "optimize": True})
             
             img.save(filename, **save_params)
             return f"Canvas saved as {filename}"
@@ -337,9 +337,9 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             
             # Set high quality parameters with DPI metadata
             dpi = 72 * scale_factor
-            save_params = {"format": format, "optimize": True, "dpi": (dpi, dpi)}
+            save_params = {"format": format, "dpi": (dpi, dpi)}
             if format.upper() in ["JPEG", "JPG"]:
-                save_params.update({"quality": 100, "subsampling": 0})
+                save_params.update({"quality": 100, "subsampling": 0, "optimize": True})
                 
             img.save(img_bytes, **save_params)
             img_bytes.seek(0)

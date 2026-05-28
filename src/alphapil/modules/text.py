@@ -118,7 +118,12 @@ class TextMixin(AlphaMixin):
         font_size = int(self._s(self._parse_num(size)))
         variation = variation or self._get_state('font_variation', None)
         
-        cache_key = (font_path, font_size, variation)
+        # Resolve registered Local aliases first to ensure cache-key consistency
+        resolved_path = font_path
+        if font_path and font_path in _GLOBAL_FONT_ALIASES:
+            resolved_path = _GLOBAL_FONT_ALIASES[font_path]
+            
+        cache_key = (resolved_path, font_size, variation)
         if cache_key in _GLOBAL_FONT_OBJ_CACHE:
             return _GLOBAL_FONT_OBJ_CACHE[cache_key]
         
@@ -129,35 +134,31 @@ class TextMixin(AlphaMixin):
         if font_path and font_path in _GLOBAL_FONT_CACHE:
             font_obj = ImageFont.truetype(io.BytesIO(_GLOBAL_FONT_CACHE[font_path]), font_size)
 
-        # 2. Check registered Local aliases
-        elif font_path and font_path in _GLOBAL_FONT_ALIASES:
-            font_path = _GLOBAL_FONT_ALIASES[font_path]
-
-        if not font_obj and font_path:
-            # 3. Try as direct path
+        if not font_obj and resolved_path:
+            # 2. Try as direct path
             try:
-                if not font_path.startswith(('http://', 'https://')):
-                    if os.path.exists(font_path):
-                        font_obj = ImageFont.truetype(font_path, font_size)
+                if not resolved_path.startswith(('http://', 'https://')):
+                    if os.path.exists(resolved_path):
+                        font_obj = ImageFont.truetype(resolved_path, font_size)
             except: pass
 
             if not font_obj:
-                # 4. Try as system font name (Auto-Discovery)
+                # 3. Try as system font name (Auto-Discovery)
                 self._discover_system_fonts()
-                name_lower = font_path.lower()
+                name_lower = resolved_path.lower()
                 if name_lower in _GLOBAL_SYSTEM_FONTS:
                     try:
                         font_obj = ImageFont.truetype(_GLOBAL_SYSTEM_FONTS[name_lower], font_size)
                     except: pass
 
             if not font_obj:
-                # 5. Try Pillow's internal search for standard names
+                # 4. Try Pillow's internal search for standard names
                 try:
-                    font_obj = ImageFont.truetype(font_path, font_size)
+                    font_obj = ImageFont.truetype(resolved_path, font_size)
                 except: pass
         
         if not font_obj:
-            # 6. Fallback to common fonts
+            # 5. Fallback to common fonts
             common_fonts = ["arial.ttf", "arialbd.ttf", "times.ttf", "cour.ttf", "DejaVuSans.ttf"]
             for font_name in common_fonts:
                 try:
@@ -166,7 +167,7 @@ class TextMixin(AlphaMixin):
                 except: continue
         
         if not font_obj:
-            # 7. Ultimate Fallback
+            # 6. Ultimate Fallback
             font_obj = ImageFont.load_default()
             
         # Apply variable font variation if provided

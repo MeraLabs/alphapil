@@ -7,6 +7,7 @@ using a while loop and re.search pattern matching.
 
 import re
 import asyncio
+import time
 import inspect
 from typing import Any, Dict, List, Optional, Callable
 
