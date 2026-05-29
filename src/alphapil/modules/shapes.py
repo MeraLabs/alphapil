@@ -73,13 +73,13 @@ class ShapesMixin(AlphaMixin):
                 temp_bbox = [(gr*2, gr*2), (gr*2 + w, gr*2 + h)]
                 
                 if r > 0 and hasattr(glow_draw, 'rounded_rectangle'):
-                    if outline_color:
-                        glow_draw.rounded_rectangle(temp_bbox, radius=r, fill=g_color, outline=g_color, width=lw+gr)
+                    if outline_color or fill_color is None:
+                        glow_draw.rounded_rectangle(temp_bbox, radius=r, fill=None, outline=g_color, width=lw+gr)
                     else:
                         glow_draw.rounded_rectangle(temp_bbox, radius=r, fill=g_color)
                 else:
-                    if outline_color:
-                        glow_draw.rectangle(temp_bbox, fill=g_color, outline=g_color, width=lw+gr)
+                    if outline_color or fill_color is None:
+                        glow_draw.rectangle(temp_bbox, fill=None, outline=g_color, width=lw+gr)
                     else:
                         glow_draw.rectangle(temp_bbox, fill=g_color)
                 
@@ -224,8 +224,8 @@ class ShapesMixin(AlphaMixin):
                 
                 temp_bbox = [(g_rad*2, g_rad*2), (g_rad*2 + w, g_rad*2 + h)]
                 
-                if outline_color:
-                    glow_draw.ellipse(temp_bbox, fill=g_color, outline=g_color, width=lw+g_rad)
+                if outline_color or fill_color is None:
+                    glow_draw.ellipse(temp_bbox, fill=None, outline=g_color, width=lw+g_rad)
                 else:
                     glow_draw.ellipse(temp_bbox, fill=g_color)
                 

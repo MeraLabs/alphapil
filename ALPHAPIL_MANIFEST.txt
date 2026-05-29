@@ -1,4 +1,4 @@
-ALPHAPIL TECHNICAL MANIFEST (V0.3.6)
+ALPHAPIL TECHNICAL MANIFEST (V0.3.7)
 ====================================
 Guide for AI Agents to write professional AlphaPIL templates.
 
@@ -28,53 +28,53 @@ Guide for AI Agents to write professional AlphaPIL templates.
 4. FUNCTION REFERENCE
 ---------------------
 (Syntax: $func[param1;param2;...])
-- AI Note: Prefer NAMED arguments for clarity (e.g., $drawRect[x=10;y=10;w=100;h=100]).
+- AI Note: Prefer NAMED arguments for clarity (e.g., $drawRect[x=10;y=10;width=100;height=100]).
 
 --- CORE ---
 $createCanvas[width;height;color;aa;strict;scale]
-$save[filename] | $setVar[name;value] | $getVar[name;default] | $setFont[name_or_alias;size;variation]
+$save[filename] | $setVar[name;value] | $getVar[name;default] | $setFont[font_name;size;variation]
 $startContainer[x;y;w;h;padding;anchor] | $endContainer[]
 $startClip[x;y;w;h;radius] | $endClip[]
 $getSystemFonts[] | $getErrors[] | $getBytes[format] | $setOutputFormat[format]
 
 --- SHAPES ---
-$drawRect[x;y;w;h;color;outline;fill;lw;radius;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
-$drawCircle[cx;cy;radius;color;outline;fill;lw;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
-$drawRoundedRect[x;y;w;h;radius;color;outline;fill;lw;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
+$drawRect[x;y;width;height;color;outline;fill;outline_width;radius;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
+$drawCircle[cx;cy;radius;color;outline;fill;outline_width;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
+$drawRoundedRect[x;y;width;height;radius;color;outline;fill;outline_width;anchor;shadow_color;shadow_offset;glow_color;glow_radius]
 $drawLine[x1;y1;x2;y2;color;width]
-$drawPolygon[points;color;outline;fill;lw] (points: x1,y1,x2,y2)
-$drawTriangle[x1;y1;x2;y2;x3;y3;color;outline;fill;lw]
-$drawStar[x;y;points;outer_r;inner_r;color;outline;fill;lw]
-$drawArc[x;y;w;h;start;end;color;width]
+$drawPolygon[points_list;color;outline;fill;outline_width] (points_list: x1,y1,x2,y2)
+$drawTriangle[x1;y1;x2;y2;x3;y3;color;outline;fill;outline_width]
+$drawStar[x;y;points;outer_radius;inner_radius;color;outline;fill;outline_width]
+$drawArc[x;y;w;h;start_angle;end_angle;color;width]
 
 --- TEXT ---
-$drawText[x;y;text;color;size;font;anchor;sw;sf;shadow_c;shadow_off;glow_c;glow_r;max_w;trunc_w;grad;line_h;tracking;variation]
-- line_h: Line spacing multiplier (e.g. 1.2)
-- tracking: Letter spacing in pixels.
-$drawTextMid[x1;y1;x2;y2;text;color;size;font;sw;sf;sc;soff;gc;gr;tracking;variation] | $drawTextIn[x1;y1;x2;y2;text;color;size;font;sw;sf;sc;soff;gc;gr;tracking;variation]
+$drawText[x;y;text;color;size;font;anchor;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;max_width;truncate_width;gradient_colors;line_height;letter_spacing;variation]
+- line_height: Line spacing multiplier (e.g. 1.2)
+- letter_spacing: Letter spacing in pixels.
+$drawTextMid[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;letter_spacing;variation] | $drawTextIn[x1;y1;x2;y2;text;color;size;font;stroke_width;stroke_fill;shadow_color;shadow_offset;glow_color;glow_radius;letter_spacing;variation]
 - $drawTextMid: Centers text between (x1,y1) and (x2,y2); auto-truncates with ... if text exceeds the available width.
 - $drawTextIn: Fits text in the box (x1,y1) to (x2,y2); auto-scales down the font size if text exceeds the box dimensions.
 $toUpper[text] | $toLower[text] | $toTitle[text] | $measureText[text;size;font]
-$wrapText[text;width;size;font] | $autoSizeText[text;max_width;start;min;font] | $truncateText[text;width;size;font;suffix]
+$wrapText[text;max_width;size;font] | $autoSizeText[text;max_width;start_size;min_size;font] | $truncateText[text;max_width;size;font;suffix]
 
 --- IMAGES & EFFECTS ---
-$drawImage[x;y;path;w;h;opacity;radius;circle;anchor]
-$useImageAsCanvas[path;h_var;w_var;fixed_w;fixed_h] | $clearImageCache[] | $drawPattern[x;y;w;h;type;color]
-$drawLinearGradient[x;y;w;h;stops;angle] (stops: "color,0;color,1")
-$drawRadialGradient[cx;cy;r;stops]
+$drawImage[x;y;image_path;width;height;opacity;radius;circle;anchor]
+$useImageAsCanvas[path;h_var;w_var;fixed_width;fixed_height] | $clearImageCache[] | $drawPattern[x;y;width;height;pattern_type;color]
+$drawLinearGradient[x;y;w;h;colors;angle] (colors: "color,0;color,1")
+$drawRadialGradient[cx;cy;radius;colors]
 $blur[radius;x;y;w;h] | $rotate[angle;expand] | $adjustColor[brightness;contrast;saturation]
 
 --- MASKING & LAYERS ---
 $createLayer[name] | $switchLayer[name] | $mergeLayer[name;x;y;opacity;target] | $applyMask[mask_path;x;y;invert]
 
 --- DATA VISUALIZATION ---
-$drawBarChart[x;y;w;h;vals;labels;theme;color;gap;show_lab;font;size;radius;max_val]
+$drawBarChart[x;y;w;h;vals;labels;theme;color;gap;show_labels;font;size;radius;max_val]
 $drawLineChart[x;y;w;h;vals;labels;theme;color;lw;points;font;size;max_val]
-$drawProgressBar[x;y;w;h;val;max;theme;color;bg;radius]
+$drawProgressBar[x;y;w;h;val;max_val;theme;color;bg;radius]
 (AI Note: Use comma-separated lists for vals and labels: vals=1,2,3)
 
 --- LOGIC & UTILS ---
-$if[condition;true;false] | $math[expr] | $random[min;max]
+$if[condition;true_val;false_val] | $math[expr] | $random[min_val;max_val]
 $length[text] | $replace[text;old;new] | $substring[text;start;end]
 $split[text;separator] | $join[separator;item1;item2;...] | $getHex[color_name]
 $function[name;args;body] (Custom macros: {arg1})
@@ -85,6 +85,7 @@ $function[name;args;body] (Custom macros: {arg1})
 1. GLASSMORPHISM: $blur[20;x;y;w;h] -> $drawRect[x;y;w;h;fill=white/10;outline=white/20;lw=1]
 2. CLIPPING: Wrap charts or images in $startClip to ensure they never bleed out of their cards.
    - **Chart Label Tip**: When clipping charts, set the chart height to less than 100% (e.g. `100%-30`) to leave room for the bottom labels so they aren't clipped out.
+   - **Clipping Coordinate Context**: Because `$startClip` establishes a new local coordinate context, any drawing commands inside the clip block (like `$drawImage`) should be positioned relative to this local box (e.g. using `x=0;y=0` to align perfectly with the clip origin) rather than using absolute coordinates. Using absolute coordinates inside a clip shifts them a second time, pushing images off-center or completely out of their boundaries.
 3. PADDING: Use $startContainer[...;padding=20] so you can just use 'left' and 'top' for content.
 4. TYPOGRAPHY: Use 'tracking' to give headers a premium feel.
 5. QUALITY: Use `scale=3;aa=2` instead of `aa=8` for best quality at smallest render cost.

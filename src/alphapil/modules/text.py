@@ -300,6 +300,9 @@ class TextMixin(AlphaMixin):
                                 full_w = sum(self.draw.textlength(c, font=ds_font) for c in text) + ds_tracking * (len(text) - 1)
                                 current_x -= full_w / 2
 
+                            # Force horizontal alignment to left for individual characters in manual tracking
+                            ds_char_anchor = 'l' + anchor[1:] if (anchor and len(anchor) >= 2) else ('la' if anchor else None)
+
                             for char in text:
                                 glow_draw_ds.text(
                                     (current_x, ds_y_pos - ds_top + ds_gr*2),
@@ -308,7 +311,7 @@ class TextMixin(AlphaMixin):
                                     fill=gc,
                                     stroke_width=ds_sw + ds_gr,
                                     stroke_fill=gc,
-                                    anchor=anchor
+                                    anchor=ds_char_anchor
                                 )
                                 current_x += self.draw.textlength(char, font=ds_font) + ds_tracking
                         else:
@@ -336,6 +339,9 @@ class TextMixin(AlphaMixin):
                                 full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
                                 current_x -= full_w / 2
 
+                            # Force horizontal alignment to left for individual characters in manual tracking
+                            char_anchor = 'l' + anchor[1:] if (anchor and len(anchor) >= 2) else ('la' if anchor else None)
+
                             for char in text:
                                 glow_draw.text(
                                     (current_x, y_pos - top + gr*2),
@@ -344,7 +350,7 @@ class TextMixin(AlphaMixin):
                                     fill=gc,
                                     stroke_width=sw+gr,
                                     stroke_fill=gc,
-                                    anchor=anchor
+                                    anchor=char_anchor
                                 )
                                 current_x += self.draw.textlength(char, font=font_obj) + tracking
                         else:
@@ -375,8 +381,11 @@ class TextMixin(AlphaMixin):
                         full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
                         current_x -= full_w / 2
 
+                    # Force horizontal alignment to left for individual characters in manual tracking
+                    char_anchor = 'l' + anchor[1:] if (anchor and len(anchor) >= 2) else ('la' if anchor else None)
+
                     for char in text:
-                        self.draw.text((current_x, y_pos + sy), char, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=anchor)
+                        self.draw.text((current_x, y_pos + sy), char, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=char_anchor)
                         current_x += self.draw.textlength(char, font=font_obj) + tracking
                 else:
                     self.draw.text((x_pos + sx, y_pos + sy), text, font=font_obj, fill=sc, stroke_width=sw, stroke_fill=sc, anchor=anchor)
@@ -410,8 +419,11 @@ class TextMixin(AlphaMixin):
                                 full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
                                 current_x -= full_w / 2
 
+                            # Force horizontal alignment to left for individual characters in manual tracking
+                            char_anchor = 'l' + anchor[1:] if (anchor and len(anchor) >= 2) else ('la' if anchor else None)
+
                             for char in text:
-                                mask_draw.text((current_x, -top + y_pos), char, font=font_obj, fill=255, anchor=anchor)
+                                mask_draw.text((current_x, -top + y_pos), char, font=font_obj, fill=255, anchor=char_anchor)
                                 current_x += mask_draw.textlength(char, font=font_obj) + tracking
                         else:
                             mask_draw.text((-left + x_pos, -top + y_pos), text, font=font_obj, fill=255, anchor=anchor)
@@ -442,8 +454,15 @@ class TextMixin(AlphaMixin):
                     full_w = sum(self.draw.textlength(c, font=font_obj) for c in text) + tracking * (len(text) - 1)
                     current_x -= full_w / 2
 
+                # Force horizontal alignment to left for individual characters in manual tracking
+                char_kwargs = {k:v for k,v in text_kwargs.items() if k not in ['xy', 'text', 'spacing']}
+                if anchor and len(anchor) >= 2:
+                    char_kwargs['anchor'] = 'l' + anchor[1:]
+                elif anchor and len(anchor) == 1:
+                    char_kwargs['anchor'] = 'la'
+
                 for char in text:
-                    self.draw.text((current_x, y_pos), char, **{k:v for k,v in text_kwargs.items() if k not in ['xy', 'text', 'spacing']})
+                    self.draw.text((current_x, y_pos), char, **char_kwargs)
                     current_x += self.draw.textlength(char, font=font_obj) + tracking
             else:
                 self.draw.text(**text_kwargs)
