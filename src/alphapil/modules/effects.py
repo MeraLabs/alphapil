@@ -7,7 +7,7 @@ Simply create a new Python file in the modules/ directory and create a mixin cla
 
 import random
 from typing import Union
-from PIL import ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 from .base import AlphaMixin
 
 
