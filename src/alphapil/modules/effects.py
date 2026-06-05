@@ -78,36 +78,49 @@ class EffectsMixin(AlphaMixin):
             stops.sort()
 
             # Create gradient buffer
-            # For simplicity, we create a vertical gradient and rotate it if needed
-            # But simpler: just vertical (90) or horizontal (0) for now, 
-            # or full rotation via a larger buffer
-            
             grad_img = Image.new("RGBA", (int(width), int(height)))
-            draw = ImageDraw.Draw(grad_img)
             
+            import math
+            # Convert angle to radians (counter-clockwise, offset by 90 to match standard graphics)
+            theta = math.radians(rot_angle)
+            cos_t = math.cos(theta)
+            sin_t = math.sin(theta)
+            
+            cx = width / 2.0
+            cy = height / 2.0
+            # Calculate maximum projection radius of the box coordinates along the angle unit vector
+            R = 0.5 * (width * abs(cos_t) + height * abs(sin_t))
+            if R == 0:
+                R = 1.0
+
             # Helper to interpolate colors
             def lerp_color(c1, c2, t):
-                return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
+                return tuple(int(c1[idx] + (c2[idx] - c1[idx]) * t) for idx in range(4))
 
-            for i in range(int(height)):
-                t = i / height
-                # Find the two stops this 't' falls between
-                c = stops[0][1]
-                for j in range(len(stops)-1):
-                    if stops[j][0] <= t <= stops[j+1][0]:
-                        local_t = (t - stops[j][0]) / (stops[j+1][0] - stops[j][0])
-                        c = lerp_color(stops[j][1], stops[j+1][1], local_t)
-                        break
-                    elif t > stops[j+1][0]:
-                        c = stops[j+1][1]
-                
-                draw.line([(0, i), (width, i)], fill=c)
+            pixels = grad_img.load()
+            for py in range(int(height)):
+                for px in range(int(width)):
+                    # Compute projection of pixel relative to center along direction vector
+                    dx = px - cx
+                    dy = py - cy
+                    proj = dx * cos_t + dy * sin_t
+                    # Normalize to [0, 1]
+                    t = (proj + R) / (2.0 * R)
+                    t = max(0.0, min(1.0, t))
+                    
+                    # Interpolate color at t
+                    c = stops[0][1]
+                    for j in range(len(stops)-1):
+                        if stops[j][0] <= t <= stops[j+1][0]:
+                            div = stops[j+1][0] - stops[j][0]
+                            local_t = (t - stops[j][0]) / div if div != 0 else 0.0
+                            c = lerp_color(stops[j][1], stops[j+1][1], local_t)
+                            break
+                        elif t > stops[j+1][0]:
+                            c = stops[j+1][1]
+                    
+                    pixels[px, py] = c
 
-            if rot_angle != 90:
-                grad_img = grad_img.rotate(90 - rot_angle, expand=True, resample=Image.Resampling.BICUBIC)
-                # Crop back to original intended size if we want fixed box, 
-                # but usually gradients fill the box.
-            
             self.canvas.paste(grad_img, (int(x1), int(y1)), grad_img)
             return f"Linear gradient drawn at ({x1}, {y1})"
         except Exception as e:
