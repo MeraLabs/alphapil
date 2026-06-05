@@ -356,10 +356,15 @@ class CanvasEngine(CanvasInterpreter, ShapesMixin, TextMixin, ImagesMixin, Utils
             
             # Set high quality parameters with DPI metadata
             dpi = 72 * scale_factor
-            save_params = {"format": format, "dpi": (dpi, dpi)}
-            if format.upper() in ["JPEG", "JPG"]:
-                save_params.update({"quality": 100, "subsampling": 0, "optimize": True})
+            fmt_upper = format.upper()
+            save_params = {"format": fmt_upper, "dpi": (dpi, dpi)}
+            if fmt_upper in ["JPEG", "JPG"]:
+                save_params.update({"quality": 90, "optimize": False})
                 img = img.convert('RGB')
+            elif fmt_upper == "WEBP":
+                save_params.update({"quality": 90})
+            elif fmt_upper == "PNG":
+                save_params.update({"compress_level": 3})
                 
             img.save(img_bytes, **save_params)
             img_bytes.seek(0)

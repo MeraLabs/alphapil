@@ -88,42 +88,45 @@ class EffectsMixin(AlphaMixin):
 
             # Create gradient buffer
             iw, ih = int(width), int(height)
-            grad_img = Image.new("RGBA", (iw, ih), (0, 0, 0, 0))
-            
             import math
-            theta = math.radians(rot_angle)
-            cos_t = math.cos(theta)
-            sin_t = math.sin(theta)
             
-            cx = width / 2.0
-            cy = height / 2.0
-            R = 0.5 * (width * abs(cos_t) + height * abs(sin_t))
-            if R == 0:
-                R = 1.0
-
+            # Calculate diagonal of rotated rectangle to prevent edge clipping during rotation
+            diag = int(math.ceil(math.sqrt(iw**2 + ih**2)))
+            if diag % 2 != 0:
+                diag += 1  # Keep it even for clean centering
+                
+            # Create a 1D gradient image of size (diag, 1)
+            grad_1d = Image.new("RGBA", (diag, 1))
+            pixels_1d = grad_1d.load()
+            
             def lerp_color(c1, c2, t):
                 return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
-
-            pixels = grad_img.load()
-            for py in range(ih):
-                for px in range(iw):
-                    dx = px - cx
-                    dy = py - cy
-                    proj = dx * cos_t + dy * sin_t
-                    t = (proj + R) / (2.0 * R)
-                    t = max(0.0, min(1.0, t))
-                    
-                    c = stops[0][1]
-                    for j in range(len(stops) - 1):
-                        if stops[j][0] <= t <= stops[j+1][0]:
-                            div = stops[j+1][0] - stops[j][0]
-                            local_t = (t - stops[j][0]) / div if div != 0 else 0.0
-                            c = lerp_color(stops[j][1], stops[j+1][1], local_t)
-                            break
-                        elif t > stops[j+1][0]:
-                            c = stops[j+1][1]
-                    
-                    pixels[px, py] = c
+                
+            for px in range(diag):
+                t = px / max(1, diag - 1)
+                c = stops[0][1]
+                for j in range(len(stops) - 1):
+                    if stops[j][0] <= t <= stops[j+1][0]:
+                        div = stops[j+1][0] - stops[j][0]
+                        local_t = (t - stops[j][0]) / div if div != 0 else 0.0
+                        c = lerp_color(stops[j][1], stops[j+1][1], local_t)
+                        break
+                    elif t > stops[j+1][0]:
+                        c = stops[j+1][1]
+                pixels_1d[px, 0] = c
+                
+            # Stretch the 1D gradient to a square of size (diag, diag)
+            grad_sq = grad_1d.resize((diag, diag), Image.Resampling.BILINEAR)
+            
+            # Rotate square image (-rot_angle to match standard coordinate system rotation)
+            grad_rotated = grad_sq.rotate(-rot_angle, resample=Image.Resampling.BILINEAR)
+            
+            # Crop out the central (iw, ih) rectangle
+            left = (diag - iw) // 2
+            top = (diag - ih) // 2
+            right = left + iw
+            bottom = top + ih
+            grad_img = grad_rotated.crop((left, top, right, bottom))
 
             # Composite gradient onto the current canvas IN-PLACE
             # This preserves the canvas object reference (critical for clip stack integrity)
