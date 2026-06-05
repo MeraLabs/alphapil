@@ -365,7 +365,7 @@ class TextMixin(AlphaMixin):
                             )
                         glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
                     
-                    self.canvas.paste(glow_img, (int(left - gr*2), int(top - gr*2)), glow_img)
+                    self.canvas.alpha_composite(glow_img, (int(left - gr*2), int(top - gr*2)))
 
             # 2. Apply Shadow Effect
             if shadow_color:
@@ -427,7 +427,11 @@ class TextMixin(AlphaMixin):
                                 current_x += mask_draw.textlength(char, font=font_obj) + tracking
                         else:
                             mask_draw.text((-left + x_pos, -top + y_pos), text, font=font_obj, fill=255, anchor=anchor)
-                        self.canvas.paste(gradient, (int(left), int(top)), mask)
+                        from PIL import ImageChops
+                        g_r, g_g, g_b, g_a = gradient.split()
+                        new_g_a = ImageChops.multiply(g_a, mask)
+                        gradient.putalpha(new_g_a)
+                        self.canvas.alpha_composite(gradient, (int(left), int(top)))
                         return f"Gradient text '{text}' drawn at ({x_pos}, {y_pos})"
 
             # 4. Draw Main Text

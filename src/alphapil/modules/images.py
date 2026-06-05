@@ -126,7 +126,7 @@ class ImagesMixin(AlphaMixin):
             x_pos = int(self._parse_position(x, 'x') + ax)
             y_pos = int(self._parse_position(y, 'y') + ay)
             
-            self.canvas.paste(img, (x_pos, y_pos), img)
+            self.canvas.alpha_composite(img, (x_pos, y_pos))
             return f"Image drawn at ({x_pos}, {y_pos}) with anchor {final_anchor}"
             
         except Exception as e:

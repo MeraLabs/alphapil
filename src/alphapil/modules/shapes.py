@@ -84,7 +84,7 @@ class ShapesMixin(AlphaMixin):
                         glow_draw.rectangle(temp_bbox, fill=g_color)
                 
                 glow_img = glow_img.filter(ImageFilter.GaussianBlur(gr))
-                self.canvas.paste(glow_img, (int(x1 - gr*2), int(y1 - gr*2)), glow_img)
+                self.canvas.alpha_composite(glow_img, (int(x1 - gr*2), int(y1 - gr*2)))
 
             # 2. Apply Shadow Effect
             if s_color:
@@ -230,7 +230,7 @@ class ShapesMixin(AlphaMixin):
                     glow_draw.ellipse(temp_bbox, fill=g_color)
                 
                 glow_img = glow_img.filter(ImageFilter.GaussianBlur(g_rad))
-                self.canvas.paste(glow_img, (int(left - g_rad*2), int(top - g_rad*2)), glow_img)
+                self.canvas.alpha_composite(glow_img, (int(left - g_rad*2), int(top - g_rad*2)))
 
             # 2. Apply Shadow Effect
             if s_color:

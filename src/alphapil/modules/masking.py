@@ -147,7 +147,7 @@ class MaskingMixin(AlphaMixin):
             # Paste with alpha composite logic
             # Using to_merge as mask enables proper alpha blending
             if to_merge.mode == 'RGBA':
-                target_img.paste(to_merge, (target_x, target_y), to_merge)
+                target_img.alpha_composite(to_merge, (target_x, target_y))
             else:
                 target_img.paste(to_merge, (target_x, target_y))
             

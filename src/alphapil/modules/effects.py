@@ -50,6 +50,15 @@ class EffectsMixin(AlphaMixin):
         except ValueError as e:
             raise ValueError(f"Invalid noise parameters: {e}")
     
+    @staticmethod
+    def _normalize_rgba(color):
+        """Ensure a color tuple is always 4-channel RGBA."""
+        if color is None:
+            return (0, 0, 0, 0)
+        if len(color) == 3:
+            return color + (255,)
+        return color
+
     def _draw_linear_gradient(self, x: str, y: str, w: str, h: str, 
                              colors: str, angle: str = "90") -> str:
         """
@@ -69,7 +78,7 @@ class EffectsMixin(AlphaMixin):
             for item in colors.split(';'):
                 parts = item.split(',')
                 if len(parts) == 2:
-                    color = self._get_color(parts[0].strip())
+                    color = self._normalize_rgba(self._get_color(parts[0].strip()))
                     stop = float(parts[1].strip())
                     stops.append((stop, color))
             
@@ -78,39 +87,34 @@ class EffectsMixin(AlphaMixin):
             stops.sort()
 
             # Create gradient buffer
-            grad_img = Image.new("RGBA", (int(width), int(height)))
+            iw, ih = int(width), int(height)
+            grad_img = Image.new("RGBA", (iw, ih), (0, 0, 0, 0))
             
             import math
-            # Convert angle to radians (counter-clockwise, offset by 90 to match standard graphics)
             theta = math.radians(rot_angle)
             cos_t = math.cos(theta)
             sin_t = math.sin(theta)
             
             cx = width / 2.0
             cy = height / 2.0
-            # Calculate maximum projection radius of the box coordinates along the angle unit vector
             R = 0.5 * (width * abs(cos_t) + height * abs(sin_t))
             if R == 0:
                 R = 1.0
 
-            # Helper to interpolate colors
             def lerp_color(c1, c2, t):
-                return tuple(int(c1[idx] + (c2[idx] - c1[idx]) * t) for idx in range(4))
+                return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
 
             pixels = grad_img.load()
-            for py in range(int(height)):
-                for px in range(int(width)):
-                    # Compute projection of pixel relative to center along direction vector
+            for py in range(ih):
+                for px in range(iw):
                     dx = px - cx
                     dy = py - cy
                     proj = dx * cos_t + dy * sin_t
-                    # Normalize to [0, 1]
                     t = (proj + R) / (2.0 * R)
                     t = max(0.0, min(1.0, t))
                     
-                    # Interpolate color at t
                     c = stops[0][1]
-                    for j in range(len(stops)-1):
+                    for j in range(len(stops) - 1):
                         if stops[j][0] <= t <= stops[j+1][0]:
                             div = stops[j+1][0] - stops[j][0]
                             local_t = (t - stops[j][0]) / div if div != 0 else 0.0
@@ -121,7 +125,10 @@ class EffectsMixin(AlphaMixin):
                     
                     pixels[px, py] = c
 
-            self.canvas.paste(grad_img, (int(x1), int(y1)), grad_img)
+            # Composite gradient onto the current canvas IN-PLACE
+            # This preserves the canvas object reference (critical for clip stack integrity)
+            self.canvas.alpha_composite(grad_img, (int(x1), int(y1)))
+            self.draw = ImageDraw.Draw(self.canvas)
             return f"Linear gradient drawn at ({x1}, {y1})"
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $drawLinearGradient[x;y;w;h;colors;angle]")
@@ -141,36 +148,42 @@ class EffectsMixin(AlphaMixin):
             for item in colors.split(';'):
                 parts = item.split(',')
                 if len(parts) == 2:
-                    color = self._get_color(parts[0].strip())
+                    color = self._normalize_rgba(self._get_color(parts[0].strip()))
                     stop = float(parts[1].strip())
                     stops.append((stop, color))
             stops.sort()
 
             size = int(r * 2)
-            grad_img = Image.new("RGBA", (size, size))
-            draw = ImageDraw.Draw(grad_img)
+            grad_img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
             
             def lerp_color(c1, c2, t):
                 return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
 
+            pixels = grad_img.load()
             for y in range(size):
                 for x in range(size):
                     dist = ((x - r)**2 + (y - r)**2)**0.5
                     t = dist / r
-                    if t > 1.0: continue
+                    if t > 1.0:
+                        continue
                     
                     c = stops[0][1]
-                    for j in range(len(stops)-1):
+                    for j in range(len(stops) - 1):
                         if stops[j][0] <= t <= stops[j+1][0]:
-                            local_t = (t - stops[j][0]) / (stops[j+1][0] - stops[j][0])
+                            div = stops[j+1][0] - stops[j][0]
+                            local_t = (t - stops[j][0]) / div if div != 0 else 0.0
                             c = lerp_color(stops[j][1], stops[j+1][1], local_t)
                             break
                         elif t > stops[j+1][0]:
                             c = stops[j+1][1]
                     
-                    draw.point((x, y), fill=c)
+                    pixels[x, y] = c
 
-            self.canvas.paste(grad_img, (int(x_pos - r), int(y_pos - r)), grad_img)
+            # Composite in-place to preserve clip stack canvas references
+            paste_x = int(x_pos - r)
+            paste_y = int(y_pos - r)
+            self.canvas.alpha_composite(grad_img, (paste_x, paste_y))
+            self.draw = ImageDraw.Draw(self.canvas)
             return "Radial gradient drawn"
         except Exception as e:
             raise ValueError(f"{e}\nProper Syntax: $drawRadialGradient[cx;cy;radius;colors]")
