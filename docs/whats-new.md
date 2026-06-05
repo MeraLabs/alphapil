@@ -4,6 +4,19 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## June 5, 2026 (v0.4.0)
+!!! abstract "Performance Release: 54x Faster Linear Gradients & Optimized Canvas Compression"
+    This release introduces massive performance optimizations to the rendering pipeline, boosting linear gradient drawing speed by 54x and making canvas output generation significantly faster.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🚀 Performance** | **54x Faster Linear Gradients** | Replaced the slow pixel-by-pixel pure Python rendering loop in `$drawLinearGradient` with an optimized 1D gradient resizing/rotating algorithm in Pillow C-routines. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🚀 Performance** | **Optimized PNG Saving** | Adjusted the default PNG compression level in `get_canvas_bytes` to `compress_level=3` (reducing save times by 2.5x with negligible file size difference). | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🚀 Performance** | **Optimized JPEG/WEBP Saving** | Configured JPEG and WEBP format saves to use `quality=90` and disable the slow huffman optimization pass by default, rendering up to 6.5x faster. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🤖 AI** | **Manifest v0.4.0** | Synchronized technical manifest version with the new rendering speed and saving upgrades. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## May 28, 2026 (v0.3.6)
 !!! abstract "Feature Release: 3,500x PNG Speedup, Rendering Caches & Tracking-Aware Bounding Boxes"
     This major performance and feature release introduces global process-level caches (for system fonts, aliases, and processed images) and integrates tracking/letter-spacing support across `$drawTextMid` and `$drawTextIn`, featuring dynamic downscaled glow rendering and massive PNG save speedups for ultra-fast generation times.
