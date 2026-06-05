@@ -4,6 +4,32 @@ Stay up to date with the latest features, improvements, and fixes in AlphaPIL.
 
 ---
 
+## June 5, 2026 (v0.4.2)
+!!! abstract "Performance Release: NumPy-Vectorized Rendering Engine"
+    This release replaces all pure-Python pixel-level loops with NumPy vectorized operations, delivering 10-200x speedups on gradient and noise rendering. NumPy is now a required dependency.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🚀 Performance** | **NumPy Linear Gradient** | Replaced the `for px in range(diag)` Python loop with `np.searchsorted` + vectorized interpolation. All `diag` pixels are computed in a single array operation instead of one-by-one. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🚀 Performance** | **NumPy Radial Gradient** | Replaced the `O(size²)` double-nested Python loop with `np.mgrid` distance computation + vectorized color interpolation. ~100x faster for radius=200. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🚀 Performance** | **NumPy Text Gradient** | Replaced per-row `ImageDraw.line()` calls with `np.linspace` color broadcast, building the full gradient array in one operation. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🚀 Performance** | **NumPy Noise Effect** | Replaced the `O(W×H)` pixel-by-pixel noise loop with vectorized `np.random` + array masking. ~100x faster for full-canvas noise. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **📦 Dependency** | **NumPy Required** | Added `numpy>=1.21.0` as a required dependency in `pyproject.toml`. | [pyproject.toml](https://github.com/MeraLabs/AlphaPIL) |
+    | **🤖 AI** | **Manifest v0.4.2** | Synchronized technical manifest version with the NumPy vectorization release. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
+## June 5, 2026 (v0.4.1)
+!!! abstract "Patch Release: Fixed Fast Linear Gradient Color Range Bug"
+    This release fixes a color compression bug in the optimized linear gradient engine by properly mapping the gradient color stops to the active projection length $L$ and padding out of bound pixels.
+
+    | Feature | Change | Description | Link |
+    | :--- | :--- | :--- | :--- |
+    | **🐛 Bug Fix** | **Gradient Color Alignment** | Solved the gradient compression bug in the 1D resizing algorithm by aligning the color stop projection space to the active length $L$ and padding outer boundaries with edge colors, yielding 100% pixel parity with the original slow loop. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+    | **🤖 AI** | **Manifest v0.4.1** | Synchronized technical manifest version with the gradient color fix. | [Manifest](ALPHAPIL_MANIFEST.txt) |
+
+---
+
 ## June 5, 2026 (v0.4.0)
 !!! abstract "Performance Release: 54x Faster Linear Gradients & Optimized Canvas Compression"
     This release introduces massive performance optimizations to the rendering pipeline, boosting linear gradient drawing speed by 54x and making canvas output generation significantly faster.

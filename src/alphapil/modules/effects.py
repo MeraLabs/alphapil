@@ -6,7 +6,9 @@ Simply create a new Python file in the modules/ directory and create a mixin cla
 """
 
 import random
+import math
 from typing import Union
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 from .base import AlphaMixin
 
@@ -32,19 +34,23 @@ class EffectsMixin(AlphaMixin):
         
         try:
             noise_level = self._parse_num(intensity)
-            pixels = self.canvas.load()
             
-            for i in range(self.canvas.width):
-                for j in range(self.canvas.height):
-                    if random.random() < noise_level / 100:
-                        # Add random color variation
-                        r, g, b = pixels[i, j]
-                        noise = random.randint(-noise_level, noise_level)
-                        pixels[i, j] = (
-                            max(0, min(255, r + noise)),
-                            max(0, min(255, g + noise)),
-                            max(0, min(255, b + noise))
-                        )
+            # NumPy vectorized noise: operates on entire image array at once
+            arr = np.array(self.canvas, dtype=np.int16)
+            h, w = arr.shape[:2]
+            
+            # Create a random mask for which pixels get noise
+            mask = np.random.random((h, w)) < (noise_level / 100.0)
+            
+            # Generate noise values for all pixels, apply only where mask is True
+            noise = np.random.randint(-int(noise_level), int(noise_level) + 1, size=(h, w, 1), dtype=np.int16)
+            noise_broadcast = np.broadcast_to(noise, (h, w, arr.shape[2]))
+            
+            # Apply noise only to masked pixels, clamp to [0, 255]
+            arr[mask] = np.clip(arr[mask] + noise_broadcast[mask], 0, 255)
+            
+            self.canvas = Image.fromarray(arr.astype(np.uint8), self.canvas.mode)
+            self.draw = ImageDraw.Draw(self.canvas)
             
             return f"Added noise with intensity {noise_level}"
         except ValueError as e:
@@ -88,32 +94,52 @@ class EffectsMixin(AlphaMixin):
 
             # Create gradient buffer
             iw, ih = int(width), int(height)
-            import math
             
-            # Calculate diagonal of rotated rectangle to prevent edge clipping during rotation
+            theta = math.radians(rot_angle)
+            cos_t = math.cos(theta)
+            sin_t = math.sin(theta)
+            
+            # Calculate active gradient projection length L
+            L = width * abs(cos_t) + height * abs(sin_t)
+            if L == 0:
+                L = 1.0
+                
             diag = int(math.ceil(math.sqrt(iw**2 + ih**2)))
             if diag % 2 != 0:
                 diag += 1  # Keep it even for clean centering
-                
-            # Create a 1D gradient image of size (diag, 1)
-            grad_1d = Image.new("RGBA", (diag, 1))
-            pixels_1d = grad_1d.load()
             
-            def lerp_color(c1, c2, t):
-                return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
-                
-            for px in range(diag):
-                t = px / max(1, diag - 1)
-                c = stops[0][1]
-                for j in range(len(stops) - 1):
-                    if stops[j][0] <= t <= stops[j+1][0]:
-                        div = stops[j+1][0] - stops[j][0]
-                        local_t = (t - stops[j][0]) / div if div != 0 else 0.0
-                        c = lerp_color(stops[j][1], stops[j+1][1], local_t)
-                        break
-                    elif t > stops[j+1][0]:
-                        c = stops[j+1][1]
-                pixels_1d[px, 0] = c
+            pad_left = (diag - L) / 2.0
+            
+            # ── NumPy vectorized 1D gradient generation ──
+            # Build t-values for all pixels at once
+            px_arr = np.arange(diag, dtype=np.float64)
+            t_arr = np.clip((px_arr - pad_left) / L, 0.0, 1.0)
+            
+            # Build color array using piecewise linear interpolation across all stops
+            stop_positions = np.array([s[0] for s in stops], dtype=np.float64)
+            stop_colors = np.array([s[1] for s in stops], dtype=np.float64)  # (N, 4)
+            
+            # For each t, find which segment it falls in and interpolate
+            # np.searchsorted gives the insertion index; clamp to valid segment range
+            indices = np.searchsorted(stop_positions, t_arr, side='right') - 1
+            indices = np.clip(indices, 0, len(stops) - 2)
+            
+            # Get the bounding stop colors and positions for each pixel
+            t0 = stop_positions[indices]          # (diag,)
+            t1 = stop_positions[indices + 1]      # (diag,)
+            c0 = stop_colors[indices]             # (diag, 4)
+            c1 = stop_colors[indices + 1]         # (diag, 4)
+            
+            # Compute local interpolation factor within each segment
+            seg_len = t1 - t0
+            seg_len[seg_len == 0] = 1.0  # avoid division by zero
+            local_t = ((t_arr - t0) / seg_len)[:, np.newaxis]  # (diag, 1)
+            
+            # Interpolate colors: (diag, 4)
+            grad_row = np.clip(c0 + (c1 - c0) * local_t, 0, 255).astype(np.uint8)
+            
+            # Create 1D gradient image from array (1 row, diag columns, 4 channels)
+            grad_1d = Image.fromarray(grad_row.reshape(1, diag, 4), "RGBA")
                 
             # Stretch the 1D gradient to a square of size (diag, diag)
             grad_sq = grad_1d.resize((diag, diag), Image.Resampling.BILINEAR)
@@ -157,30 +183,44 @@ class EffectsMixin(AlphaMixin):
             stops.sort()
 
             size = int(r * 2)
-            grad_img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
             
-            def lerp_color(c1, c2, t):
-                return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(4))
-
-            pixels = grad_img.load()
-            for y in range(size):
-                for x in range(size):
-                    dist = ((x - r)**2 + (y - r)**2)**0.5
-                    t = dist / r
-                    if t > 1.0:
-                        continue
-                    
-                    c = stops[0][1]
-                    for j in range(len(stops) - 1):
-                        if stops[j][0] <= t <= stops[j+1][0]:
-                            div = stops[j+1][0] - stops[j][0]
-                            local_t = (t - stops[j][0]) / div if div != 0 else 0.0
-                            c = lerp_color(stops[j][1], stops[j+1][1], local_t)
-                            break
-                        elif t > stops[j+1][0]:
-                            c = stops[j+1][1]
-                    
-                    pixels[x, y] = c
+            # ── NumPy vectorized radial gradient ──
+            # Create coordinate grids
+            y_coords, x_coords = np.mgrid[0:size, 0:size]
+            
+            # Compute distance from center for every pixel
+            dist = np.sqrt((x_coords - r)**2 + (y_coords - r)**2)
+            t_arr = dist / r  # (size, size) normalized distance
+            
+            # Build stop arrays
+            stop_positions = np.array([s[0] for s in stops], dtype=np.float64)
+            stop_colors = np.array([s[1] for s in stops], dtype=np.float64)  # (N, 4)
+            
+            # Flatten t for vectorized interpolation, clamp to [0, 1]
+            t_flat = np.clip(t_arr.ravel(), 0.0, 1.0)  # (size*size,)
+            
+            # Find segment indices
+            indices = np.searchsorted(stop_positions, t_flat, side='right') - 1
+            indices = np.clip(indices, 0, len(stops) - 2)
+            
+            # Interpolate colors
+            t0 = stop_positions[indices]
+            t1 = stop_positions[indices + 1]
+            c0 = stop_colors[indices]        # (size*size, 4)
+            c1 = stop_colors[indices + 1]    # (size*size, 4)
+            
+            seg_len = t1 - t0
+            seg_len[seg_len == 0] = 1.0
+            local_t = ((t_flat - t0) / seg_len)[:, np.newaxis]  # (size*size, 1)
+            
+            colors_flat = np.clip(c0 + (c1 - c0) * local_t, 0, 255).astype(np.uint8)  # (size*size, 4)
+            
+            # Reshape to image and apply circular mask (pixels outside radius = transparent)
+            colors_2d = colors_flat.reshape(size, size, 4)
+            outside_mask = t_arr > 1.0
+            colors_2d[outside_mask] = (0, 0, 0, 0)
+            
+            grad_img = Image.fromarray(colors_2d, "RGBA")
 
             # Composite in-place to preserve clip stack canvas references
             paste_x = int(x_pos - r)

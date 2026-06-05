@@ -10,6 +10,7 @@ import aiohttp
 import os
 import platform
 import time
+import numpy as np
 from typing import Union, Dict, Optional, List, Tuple
 from PIL import ImageDraw, ImageFont, ImageFilter, Image
 
@@ -398,15 +399,19 @@ class TextMixin(AlphaMixin):
                     left, top, right, bottom = bbox
                     tw, th = int(right - left), int(bottom - top)
                     if tw > 0 and th > 0:
-                        gradient = Image.new("RGBA", (tw, th))
-                        c1 = self._get_color(colors[0])
-                        c2 = self._get_color(colors[1])
-                        for i in range(th):
-                            ratio = i / th
-                            r = int(c1[0] * (1 - ratio) + c2[0] * ratio)
-                            g = int(c1[1] * (1 - ratio) + c2[1] * ratio)
-                            b = int(c1[2] * (1 - ratio) + c2[2] * ratio)
-                            ImageDraw.Draw(gradient).line([(0, i), (tw, i)], fill=(r, g, b, 255))
+                        c1 = np.array(self._get_color(colors[0])[:3], dtype=np.float64)
+                        c2 = np.array(self._get_color(colors[1])[:3], dtype=np.float64)
+                        
+                        # NumPy vectorized: build entire gradient array at once
+                        ratio = np.linspace(0, 1, th, dtype=np.float64)[:, np.newaxis]  # (th, 1)
+                        rgb = ((1 - ratio) * c1 + ratio * c2).astype(np.uint8)  # (th, 3)
+                        
+                        # Broadcast to full width: (th, tw, 3) + alpha channel
+                        grad_arr = np.zeros((th, tw, 4), dtype=np.uint8)
+                        grad_arr[:, :, :3] = rgb[:, np.newaxis, :]  # broadcast across width
+                        grad_arr[:, :, 3] = 255
+                        
+                        gradient = Image.fromarray(grad_arr, "RGBA")
                         
                         mask = Image.new("L", (tw, th), 0)
                         mask_draw = ImageDraw.Draw(mask)
