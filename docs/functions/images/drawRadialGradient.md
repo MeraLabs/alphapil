@@ -6,11 +6,12 @@ Draws a circular radial gradient.
 `$drawRadialGradient[cx;cy;radius;colors]`
 
 ## Parameters
-| Parameter | Description |
-| :--- | :--- |
-| `cx`, `cy` | Center coordinates |
-| `radius` | Radius of the gradient |
-| `colors` | Semicolon-separated color stops (e.g., `white,0;transparent,1`) |
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| **cx** | `int/str` | X position of the gradient center. | Required |
+| **cy** | `int/str` | Y position of the gradient center. | Required |
+| **radius** | `int` | Radius of the gradient circular bounds. | Required |
+| **colors** | `string` | Semicolon-separated color stops (e.g., `white,0;transparent,1`). | Required |
 
 ## Example
 ```bash

@@ -3,14 +3,14 @@
 Defines a custom macro function (User-Defined Function) that can be reused throughout your template.
 
 ## Syntax
-`$function[name;arguments;body]`
+`$function[name;args;body]`
 
 ## Parameters
-| Parameter | Description |
-| :--- | :--- |
-| `name` | The name of your custom function (call it using `$name[...]`) |
-| `arguments` | Comma-separated list of parameter names (e.g., `x,y,text`) |
-| `body` | The AlphaPIL commands to execute. Use `{arg_name}` to reference parameters. |
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| **name** | `string` | The name of your custom function (call it using `$name[...]`). | Required |
+| **args** | `string` | Comma-separated list of parameter names (e.g., `x,y,text`). | Required |
+| **body** | `string` | The AlphaPIL commands to execute. Use `{arg_name}` to reference parameters. | Required |
 
 ## Example
 ```bash

@@ -13,7 +13,7 @@ $join[separator;item1;item2;...]
 | Parameter | Type | Description | Default |
 | :--- | :--- | :--- | :--- |
 | **separator**| `string` | The string to insert between items. | Required |
-| **item1 / 2...**| `string` | Any number of strings to join together. | Required |
+| **items** | `string` | Any number of strings to join together. | Required |
 
 ## Example
 

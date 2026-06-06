@@ -6,11 +6,13 @@ Applies a Gaussian blur to a specific region or the entire canvas. Perfect for G
 `$blur[radius;x;y;w;h]`
 
 ## Parameters
-| Parameter | Description |
-| :--- | :--- |
-| `radius` | Blur intensity |
-| `x`, `y` | (Optional) Top-left corner of the region to blur |
-| `w`, `h` | (Optional) Dimensions of the region to blur |
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| **radius** | `int` | Blur intensity / radius. | Required |
+| **x** | `int/str` | X coordinate of the region to blur. | `None` (full width if omitted) |
+| **y** | `int/str` | Y coordinate of the region to blur. | `None` (full height if omitted) |
+| **w** | `int/str` | Width of the region to blur. | `None` |
+| **h** | `int/str` | Height of the region to blur. | `None` |
 
 ## Example
 ```bash

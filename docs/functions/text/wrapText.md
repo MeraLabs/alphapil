@@ -5,7 +5,7 @@ Wraps a text string so that no line exceeds a maximum width in pixels. It return
 ## Syntax
 
 ```bash
-$wrapText[text;width;size;font]
+$wrapText[text;max_width;size;font;is_scaled]
 ```
 
 ## Parameters
@@ -13,9 +13,10 @@ $wrapText[text;width;size;font]
 | Parameter | Type | Description | Default |
 | :--- | :--- | :--- | :--- |
 | **text** | `string` | The input text to wrap. | Required |
-| **width** | `int` | The maximum allowable line width in pixels. | Required |
+| **max_width** | `int` | The maximum allowable line width in pixels. | Required |
 | **size** | `int` | The font size to use for calculation. | `12` |
 | **font** | `string` | The font name/alias to use for calculation. | Current default font |
+| **is_scaled** | `bool` | Whether the maximum width should be scaled based on the canvas scale factor. | `false` |
 
 ## Example
 

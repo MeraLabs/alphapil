@@ -6,12 +6,14 @@ Draws a rectangle filled with a linear gradient. Supports multiple color stops a
 `$drawLinearGradient[x;y;w;h;colors;angle]`
 
 ## Parameters
-| Parameter | Description |
-| :--- | :--- |
-| `x`, `y` | Position of the top-left corner |
-| `w`, `h` | Dimensions of the gradient box |
-| `colors` | Semicolon-separated color stops (e.g., `red,0;blue,0.5;green,1`) |
-| `angle` | Rotation angle in degrees (default: 90 for vertical) |
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| **x** | `int/str` | X position of the top-left corner. | Required |
+| **y** | `int/str` | Y position of the top-left corner. | Required |
+| **w** | `int/str` | Width of the gradient bounding box. | Required |
+| **h** | `int/str` | Height of the gradient bounding box. | Required |
+| **colors** | `string` | Semicolon-separated color stops (e.g., `red,0;blue,0.5;green,1`). | Required |
+| **angle** | `int` | Rotation angle of the gradient in degrees. | `90` (vertical) |
 
 ## Example
 ```bash

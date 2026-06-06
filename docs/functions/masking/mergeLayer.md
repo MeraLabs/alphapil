@@ -13,7 +13,8 @@ $mergeLayer[name;x;y;opacity;target]
 | Parameter | Type | Description | Default |
 | :--- | :--- | :--- | :--- |
 | **name** | `string` | Source layer name. | Required |
-| **x, y** | `int/str` | Position to paste the layer. | `0, 0` |
+| **x** | `int/str` | X position to paste the layer. | `0` |
+| **y** | `int/str` | Y position to paste the layer. | `0` |
 | **opacity** | `int` | Opacity percentage. | `100` |
 | **target** | `string` | Target layer name (or `main`). | `main` |
 

@@ -5,14 +5,14 @@ Sets the default font, size, and optional variable font variation for all subseq
 ## Syntax
 
 ```bash
-$setFont[font_path;size;variation]
+$setFont[font_name;size;variation]
 ```
 
 ## Parameters
 
 | Parameter | Type | Description | Default |
 | :--- | :--- | :--- | :--- |
-| **font_path** | `string` | Path to a `.ttf` or `.otf` file, a system font name, or a font alias. | Required |
+| **font_name** | `string` | Path to a `.ttf` or `.otf` file, a system font name, or a font alias. | Required |
 | **size** | `int` | Default font size in pixels. | `12` |
 | **variation** | `string` | Variable font axes (e.g. `wght=700` or `wght=400,wdth=100`) or predefined variation name (e.g. `Bold`). | `None` |
 

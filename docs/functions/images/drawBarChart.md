@@ -6,20 +6,22 @@ Draws a professional bar chart with theme support.
 `$drawBarChart[x;y;w;h;vals;labels;theme;color;gap;show_lab;font;size;radius;max_val]`
 
 ## Parameters
-| Parameter | Description |
-| :--- | :--- |
-| `x`, `y` | Position of the chart |
-| `w`, `h` | Dimensions of the chart |
-| `vals` | Comma or semicolon-separated numbers (e.g., `10,20,30`) |
-| `labels` | Comma or semicolon-separated strings for X-axis |
-| `theme` | Built-in theme name (e.g., `modern`, `minimal`) |
-| `color` | Override theme with a single color |
-| `gap` | Gap between bars in pixels (default: 10) |
-| `show_lab` | Show X-axis labels (`true`/`false`) |
-| `font` | Custom font name for labels |
-| `size` | Font size for labels (default: 20) |
-| `radius` | Corner radius for the bars (default: 0) |
-| `max_val` | Manual maximum value for normalization (optional) |
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| **x** | `int/str` | X position of the chart. | Required |
+| **y** | `int/str` | Y position of the chart. | Required |
+| **w** | `int/str` | Width of the chart. | Required |
+| **h** | `int/str` | Height of the chart. | Required |
+| **vals** | `list/str` | Comma or semicolon-separated values (e.g. `10,50,30,80`). | Required |
+| **labels** | `list/str` | Comma or semicolon-separated label strings for each bar. | Required |
+| **theme** | `string` | Color theme name (e.g. `modern`, `minimal`, `ocean`). | `modern` |
+| **color** | `string` | Override theme with a single fill color. | `None` |
+| **gap** | `int` | Gap between bars in pixels. | `10` |
+| **show_lab** | `bool` | Whether to display X-axis labels. | `true` |
+| **font** | `string` | Custom font name for labels. | Default font |
+| **size** | `int` | Font size for labels. | `20` |
+| **radius** | `int` | Corner radius for the bars. | `0` |
+| **max_val** | `float` | Custom maximum value limit for scaling the bars. | `None` |
 
 ## Example
 ```bash

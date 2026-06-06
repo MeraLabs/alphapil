@@ -6,10 +6,10 @@ Retrieves the value of a variable previously set with `$setVar`.
 `$getVar[name;default]`
 
 ## Parameters
-| Parameter | Description |
-| :--- | :--- |
-| `name` | The name of the variable to retrieve. |
-| `default` | (Optional) Value to return if the variable is not found. |
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| **name** | `string` | The name of the variable to retrieve. | Required |
+| **default** | `string` | Optional fallback value to return if the variable is not defined. | `""` |
 
 ## Example
 ```bash

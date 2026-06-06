@@ -85,6 +85,8 @@ nav:
       - clearImageCache: functions/images/clearImageCache.md
       - drawPattern: functions/images/drawPattern.md
       - rotate: functions/images/rotate.md
+      - rotateCanvas: functions/images/rotateCanvas.md
+      - rotateLayer: functions/images/rotateLayer.md
       - adjustColor: functions/images/adjustColor.md
       - drawLinearGradient: functions/images/drawLinearGradient.md
       - drawRadialGradient: functions/images/drawRadialGradient.md

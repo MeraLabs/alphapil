@@ -5,7 +5,7 @@ Draws an image onto the canvas. Supports URLs, local files, and advanced styling
 ## Syntax
 
 ```bash
-$drawImage[x;y;image_path;width;height;opacity;radius;circle]
+$drawImage[x;y;image_path;width;height;opacity;radius;circle;anchor]
 ```
 
 ## Parameters

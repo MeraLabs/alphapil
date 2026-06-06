@@ -3,17 +3,17 @@
 Starts a new container box. Keywords like `center`, `right`, and `bottom` inside this box will resolve relative to its boundaries instead of the whole canvas.
 
 ## Syntax
-`$startContainer[x;y;width;height;padding;anchor]`
+`$startContainer[x;y;w;h;padding;anchor]`
 
 ## Parameters
-| Parameter | Description |
-| :--- | :--- |
-| `x` | X position of the container top-left corner (or adjusted by anchor) |
-| `y` | Y position of the container top-left corner (or adjusted by anchor) |
-| `width` | Width of the container |
-| `height` | Height of the container |
-| `padding` | Optional internal padding applied to elements inside |
-| `anchor` | Anchor position for container placement (e.g. `lt`, `mm`, `rb`) |
+| Parameter | Type | Description | Default |
+| :--- | :--- | :--- | :--- |
+| **x** | `int/str` | X position of the container top-left corner (or relative to parent anchor). | Required |
+| **y** | `int/str` | Y position of the container top-left corner (or relative to parent anchor). | Required |
+| **w** | `int/str` | Width of the container. | Required |
+| **h** | `int/str` | Height of the container. | Required |
+| **padding** | `int` | Optional internal padding applied to elements inside. | `0` |
+| **anchor** | `string` | Anchor placement point for the container itself (e.g. `lt`, `mm`, `rb`). | `lt` |
 
 ## Example
 ```bash
