@@ -34,7 +34,12 @@ class ImagesMixin(AlphaMixin):
             raise RuntimeError("No drawing context available. Call $createCanvas first.")
     
     def _get_image_cache(self):
-        """Get or create image cache."""
+        """Get or create image cache with automatic size management to prevent memory leaks."""
+        # Evict the oldest 150 items if the cache grows too large (beyond 500 elements)
+        if len(_GLOBAL_IMAGE_CACHE) > 500:
+            keys_to_remove = list(_GLOBAL_IMAGE_CACHE.keys())[:150]
+            for k in keys_to_remove:
+                _GLOBAL_IMAGE_CACHE.pop(k, None)
         return _GLOBAL_IMAGE_CACHE
     
     async def _draw_image(self, x: str, y: str, image_path: str, 
